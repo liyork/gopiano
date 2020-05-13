@@ -1,0 +1,12 @@
+.history_rewritten_*
+.project
+.pydevproject
+tools/vagrant/.vagrant/
+*.iml
+.idea/
+.vscode/
+/bazel-*
+*.bak
+*.pyc
+cluster.env
+kubedns
