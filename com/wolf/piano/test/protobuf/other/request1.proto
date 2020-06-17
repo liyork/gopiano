@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+// package 属于 proto 文件自身的范围定义，与生成的 go 代码无关
+// 为了避免当导入其他 proto 文件时导致的文件内的命名冲突。所以，当导入非本包的 message 时，需要加 package 前缀,同包内的引用不需要加包名前缀。
+package other;
+
+//声明就和生成的 go 代码相关，它定义了生成的 go 文件所属包的完整包名，所谓完整，是指相对于该项目的完整的包路径，应以项目的 Module Name 为前缀
+// 引入本文件所生成的 go 包时，import 的路径并不是基于项目 Module 的完整路径，而是在执行 protoc 命令时相对于 --proto_path 的包路径，这在 go build 时是找不到要导入的包的
+// 声明 是为了让生成的其他 go 包（依赖方）可以正确 import 到本包（被依赖方）
+//option go_package = "github.com/liyork/gopiano/com/wolf/piano/test/protobuf/other";
+
+// 将request.proto中内容移动到newrequest.proto
+// 在文件中使用import public语法将所有导入转发到新位置
+// 任何导入包含import public语句的proto文件的人都可以传递依赖导入公共依赖项
+//import public "gopiano/com/wolf/piano/test/protobuf/other/newrequest.proto";
+
+message Result3 {
+    string url = 1;
+    string title = 2;
+    repeated string snippets = 3;
+}
+
+// protoc --proto_path=/Users/lichao30/goland_workspace --go_out=paths=source_relative:/Users/lichao30/goland_workspace /Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/other/*.proto
+
+// --go_out 参数的写法是，参数之间用逗号隔开，最后加上冒号来指定代码目录架构的生成位置
+// 例如：--go_out=paths=import:. 。paths 参数有两个选项，import和source_relative。
+// 默认为 import ，代表按照生成的 go 代码的包的全路径(github.com/liyork/gopiano/xxx)去创建目录层级，source_relative 代表按照 proto 源文件的目录层级(gopiano/xxx)去创建 go 代码的目录层级，如果目录已存在则不用创建。
+
+// 为了统一性，我会将所有 proto 文件中的 import 路径写为相对于项目根目录的路径，然后 protoc 的执行总是在项目根目录下进行
+// for x in **/*.proto; do protoc --go_out=plugins=grpc,paths=source_relative:. $x; done
+
+// cd /Users/lichao30/goland_workspace
+// protoc --proto_path=. --go_out=paths=source_relative:. ./gopiano/com/wolf/piano/test/protobuf/other/*.proto

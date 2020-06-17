@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package protobuf;
+
+message helloworld 
+{ 
+    required int32     id = 1;  // ID 
+    required string    str = 2;  // str 
+    optional int32     opt = 3;  //optional field 
+}
+
+// 注意
+// 如果不定义package，编译器会自行的将文件名生成package名
+// golang遵循的是驼峰规则，message和field的名字首字母将会自动转为大写字母(如果首字母为下划线，则下划线会被自动转换为大写的X)，而package名则不会
+
+// cd /Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf
+// protoc --go_out=. helloworld.proto
+// --go_out=
+// 生成的【.pb.go】文件不允许编辑，如需要修改某些字段或者信息，则需要修改【.proto】文件然后重新编译生成即可。

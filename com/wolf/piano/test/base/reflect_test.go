@@ -42,6 +42,75 @@ import (
 // Type：Type类型用来表示一个go类型。
 // Value为go值提供了反射接口
 
+//反射法则：
+//反射从接口到反射对象中(Reflection goes from interface value to reflection object.)
+//反射从反射对象到接口中(Reflection goes from reflection object to interface value.)
+//要修改反射对象，值必须是“可设置”的(To modify a reflection object, the value must be settable.)
+
+// 反射是审查接口变量中(type, value)组合的机制。
+// Type和Value可以访问接口变量的内容。reflect.TypeOf和reflect.ValueOf返回的reflect.Type和reflect.Value可以拼凑一个接口值
+func TestReflectBase1(t *testing.T) {
+	var x float64 = 3.4
+	// reflect.TypeOf的声明中包含了一个空接口：
+	// 调用reflect.TypeOf(x)时，作为参数传入的x在此之前已被存进了一个空接口。而reflect.TypeOf解包了空接口，恢复了它所含的类型信息
+	fmt.Println("type:", reflect.TypeOf(x))
+	fmt.Println("type,kind:", reflect.TypeOf(x).Kind())
+
+	// reflect.ValueOf函数则是恢复了值
+	valueOf := reflect.ValueOf(x)
+	fmt.Println("value:", valueOf)
+
+	// Value有一个Type方法返回reflect.Value的Type
+	fmt.Println("value,type:", valueOf.Type())
+	fmt.Println("kind is float64:", valueOf.Kind() == reflect.Float64)
+	fmt.Println("value:", valueOf.Float()) // 取值
+}
+
+func TestReflectAttetion(t *testing.T) {
+	// 为了保持API的简洁，Value的Getter和Setter方法是用最大的类型去操作数据：
+	// 例如让所有的整型都使用int64表示。Value的Int方法返回一个int64的值，SetInt需要传入int64参数；
+	var x uint8 = 'x'
+	v := reflect.ValueOf(x)
+	fmt.Println("type:", v.Type())                            // uint8.
+	fmt.Println("kind is uint8: ", v.Kind() == reflect.Uint8) // true.
+	// 将数值转换成它的实际类型在某些时候是有必要的：
+	x = uint8(v.Uint()) // v.Uint returns a uint64.
+
+	// 反射对象的Kind方法描述的是基础类型，而不是静态类型。如果一个反射对象包含了用户定义类型的值，如下：
+	type MyInt int
+	var q MyInt = 7
+	// 虽然x的静态类型是MyInt而非int，但v的Kind依然是reflect.Int。Type可以区分开int和MyInt，但Kind无法做到。
+	ofV2 := reflect.ValueOf(q)
+	fmt.Println("v2,type:", ofV2.Type())
+	fmt.Println("v2,kind:", ofV2.Kind())
+}
+
+// 从反射对象到接口
+//通过一个reflect.Value我们可以使用Interface方法恢复一个接口；这个方法将类型和值信息打包成一个接口并将其返回：
+func TestReflectReturnInterface(t *testing.T) {
+	var x float64 = 3.4
+	v := reflect.ValueOf(x)
+
+	y := v.Interface().(float64) // y will have type float64.
+	fmt.Println(y)
+}
+
+//Interface方法就是ValueOf函数的逆，除非ValueOf所得结果的类型是interface{}
+func TestPrintInter(t *testing.T) {
+	var x float64 = 3.4
+	v := reflect.ValueOf(x)
+	// fmt.Println和fmt.Printf的参数都是interface{}，传入之后由fmt的私有方法解包
+	//正是因为fmt把Interface方法的返回结果传递给了格式化打印事务（formatted print routine），所以程序才能正确打印出reflect.Value的内容：
+	fmt.Println(v)
+
+	// 由于值的类型是float64，我们可以用浮点格式化打印它：
+	// 无需对v.Interface()做类型断言，这个空接口值包含了具体的值的类型信息，Printf会恢复它
+	fmt.Printf("value is %7.1e\n", v.Interface())
+
+	f := v.Float()
+	fmt.Println(f)
+}
+
 type User struct {
 	ID   int
 	Name string
@@ -62,7 +131,7 @@ type cat struct {
 // TypeOf returns the reflection Type that represents the dynamic type of i.
 // If i is a nil interface value, TypeOf returns nil.
 // func TypeOf(i interface{}) Type {...}
-func TestReflectBase(t *testing.T) {
+func TestReflectBase2(t *testing.T) {
 
 	typeOfCat := reflect.TypeOf(cat{})
 	// 显示反射类型对象的名称和种类
@@ -106,6 +175,54 @@ func TestReflectPoint(t *testing.T) {
 	var a int64 = 100
 	reflectSetValue2(&a)
 	fmt.Println("a:", a)
+}
+
+// 若要修改反射对象，值必须可设置
+func TestReflectSetValueErr(t *testing.T) {
+	var x float64 = 3.4
+	// 传递了一份x的拷贝到reflect.ValueOf中，所以传到reflect.ValueOf的接口值不是由x，而是由x的拷贝创建的。
+	v := reflect.ValueOf(x)
+	// 问题在于7.1是不可寻址的，这意味着v就会变得不可设置。“可设置”(settability)是reflect.Value的特性之一，但并非所有的Value都是可设置的
+	// 对一个不可设置的Value调用的Set方法是错误的
+	// v.SetFloat(7.1) // Error: will panic.
+
+	// 反射对象的“可设置性”由它是否拥有原项目(orginal item)所决定。
+	fmt.Println("settability of v:", v.CanSet())
+}
+
+func TestReflectSetValueRight(t *testing.T) {
+	var x float64 = 3.4
+	// 如果我们想用反射修改x，我们必须把值的指针传给反射库
+	p := reflect.ValueOf(&x) // Note: take the address of x.
+	fmt.Println("type of p:", p.Type())
+	// 反射对象p不是可设置的
+	fmt.Println("settability of p:", p.CanSet())
+	// 想要设置的不是它，而是*p。 为了知道p指向了哪，我们调用Value的Elem方法，它通过指针定向并把结果保存在了一个Value中，命名为v：
+	v2 := p.Elem()
+	fmt.Println("settability of v2:", v2.CanSet())
+	v2.SetFloat(7.1)
+	fmt.Println(v2.Interface())
+	fmt.Println(x)
+}
+
+func TestReflectSetStructValueRight(t *testing.T) {
+	// 结构体中只有可导出的的字段是“可设置”的
+	type T struct {
+		A int
+		B string
+	}
+	q := T{23, "skidoo"}
+	s := reflect.ValueOf(&q).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		fmt.Printf("%d: %s %s = %v\n", i,
+			typeOfT.Field(i).Name, f.Type(), f.Interface())
+	}
+
+	s.Field(0).SetInt(77)
+	s.Field(1).SetString("Sunset Strip")
+	fmt.Println("t is now", t)
 }
 
 func TestReflectSetValue(t *testing.T) {

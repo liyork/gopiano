@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package other;
+
+option go_package = "github.com/liyork/gopiano/com/wolf/piano/test/protobuf/other";
+
+message Result3 {
+    string url = 1;
+    string title = 2;
+    repeated string snippets = 3;
+}

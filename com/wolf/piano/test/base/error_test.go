@@ -11,6 +11,14 @@ import (
 //  Error() string
 //}
 
+func TestErrorBase(t *testing.T) {
+	err := fmt.Errorf("xxx%d", 1)
+	fmt.Println("err:", err)
+
+	err2 := errors.New("xx123")
+	fmt.Println("err2:", err2)
+}
+
 // 对于返回值传递是值传递
 func TestErrorAddress(t *testing.T) {
 	fmt.Println(11111)

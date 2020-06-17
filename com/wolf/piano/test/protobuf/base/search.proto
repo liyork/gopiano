@@ -1,0 +1,60 @@
+// 使用proto3语法,必须是文件中非空非注释行的第一行
+syntax = "proto3";
+
+package base;
+
+// request.proto代码迁移到newrequest.proto但是对于这里无感知
+// 编译器会在通过命令行参数-I或者--proto-path中指定的文件夹中搜索.proto文件，如果没有提供,编译器会在唤其编译器的目录中进行搜索。
+// 通常来说你应该将--proto-path的值设置为你项目的根目录，并对所有导入使用完全限定名称。
+import "other/request1.proto";
+
+//option go_package = "github.com/liyork/gopiano/com/wolf/piano/test/protobuf/base";
+
+
+message SearchRequest {
+    string query = 1;
+    int32 page_number = 2;
+    int32 result_per_page = 3;
+    enum Corpus {
+        UNIVERSAL = 0;
+        WEB = 1;
+        IMAGES = 2;
+        LOCAL = 3;
+        NEWS = 4;
+        PRODUCTS = 5;
+        VIDEO = 6;
+    }
+    Corpus corpus = 4;
+}
+
+message SearchResponse {
+    // 嵌套
+    message Result2 {
+        string url = 1;
+        string title = 2;
+        repeated string snippets = 3;
+    }
+    // 包名.消息
+    repeated other.Result3 results = 1;
+}
+
+//message SomeOtherMessage {
+//    // 使用父消息中的子消息
+//    SearchResponse.Result2 result = 1;
+//}
+
+
+// protoc --proto_path=/Users/lichao30/goland_workspace --proto_path=/Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/base --go_out=Mgopiano/com/wolf/piano/test/protobuf/other/request1.proto=github.com/liyork/gopiano/com/wolf/piano/test/protobuf/other/request1.proto:/Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/base search.proto
+
+
+// protoc --proto_path=/Users/lichao30/goland_workspace --proto_path=/Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/base --go_out=/Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/base search.proto
+
+// 一种解决方案，用go_package，直接都指定github.com/liyork
+// protoc --proto_path=. --go_out=paths=source_relative:. ./gopiano/com/wolf/piano/test/protobuf/base/*.proto
+
+// 另一种解决方案，使用M将源映射到成生成的依赖
+// protoc --proto_path=. --go_out=plugins=grpc,Mgopiano/com/wolf/piano/test/protobuf/other/request1.proto=github.com/liyork/gopiano/com/wolf/piano/test/protobuf/other:/Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/other ./gopiano/com/wolf/piano/test/protobuf/base/*.proto
+
+// 最后
+// cd /Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf
+// protoc --proto_path=. --go_out=paths=source_relative:. ./base/*.proto

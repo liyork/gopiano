@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// 无序
 func TestMapBase(t *testing.T) {
 	maps := make(map[int]string, 3)
 	maps[0] = "a"
@@ -13,6 +14,29 @@ func TestMapBase(t *testing.T) {
 
 	for k, v := range maps {
 		fmt.Printf("k:%v,v:%v\n", k, v)
+	}
+}
+
+func TestMapRef(t *testing.T) {
+	maps := make(map[int]string, 3)
+	maps[0] = "a"
+	maps[1] = "b"
+	maps[2] = "c"
+
+	// 两个引用一个对象
+	map2 := maps
+	map2[0] = "x"
+
+	fmt.Println(maps)
+}
+
+func TestMapExist(t *testing.T) {
+	maps := make(map[int]string, 3)
+	maps[0] = "a"
+
+	value, exist := maps[1]
+	if exist {
+		fmt.Println("value:", value)
 	}
 }
 
@@ -36,6 +60,12 @@ func TestMapPoint(t *testing.T) {
 	}
 
 	fmt.Println("maps[1]:", maps[1])
+}
+
+func TestDelete(t *testing.T) {
+	maps := map[int]string{1: "a", 2: "b"}
+	delete(maps, 1)
+	fmt.Println(maps)
 }
 
 func TestDeleteNil(t *testing.T) {

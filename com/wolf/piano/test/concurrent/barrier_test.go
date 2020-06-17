@@ -1,4 +1,4 @@
-package chantest
+package concurrent
 
 import (
 	"fmt"

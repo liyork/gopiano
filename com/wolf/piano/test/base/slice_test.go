@@ -3,6 +3,7 @@ package base
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -29,13 +30,14 @@ func TestSliceBase(t *testing.T) {
 	fmt.Println(s)
 	fmt.Println(len(s), cap(s))
 
-	//切片的零值为nil。对一个值为nil的切片来说，len和cap会返回0
+	//切片的零值为nil
 	var snil []int
-	fmt.Println(len(snil), cap(snil))
+	fmt.Println(len(snil), cap(snil)) // 0, 0
 
 	// 可以通过“切”一个数组或者是切片，来生成新的切片。
 	//b[1:4]会返回一个新的切片，包含的元素为b中的第1到第4-1的元素(最后不包含)
 	b := []byte{'g', 'o', 'l', 'a', 'n', 'g'}
+	// 从0开始，不包括endIndex
 	bs := b[1:4] // bs和b中的元素占用同一块内存
 	fmt.Printf("bs:%s\n", bs)
 
@@ -43,6 +45,22 @@ func TestSliceBase(t *testing.T) {
 	x := [3]string{"Лайка", "Белка", "Стрелка"}
 	s1 := x[:] // s为指向x切片的引用
 	fmt.Println(s1)
+}
+
+// 引用相同底层数组
+func TestSliceUpdate(t *testing.T) {
+	a := []int{1, 2, 3}
+	b := a[0:1]
+	b[0] = 44
+	fmt.Println(a, " xxxx ", b)
+}
+
+func TestSliceDelete(t *testing.T) {
+	a := []int{1, 2, 3}
+	index := 1
+	// 删除下标index的元素
+	a = append(a[:index], a[index+1:]...)
+	fmt.Println(a)
 }
 
 // slice和数组在声明时的区别：
@@ -61,6 +79,27 @@ func TestSliceArrayDiff(t *testing.T) {
 		rv := reflect.ValueOf(v)
 		fmt.Println(i, rv.Kind())
 	}
+}
+
+// 按照目标的len进行拷贝
+func TestSliceCopy(t *testing.T) {
+	var source = make([]string, 0)
+	for i := 0; i < 10; i++ {
+		source = append(source, fmt.Sprintf("%v", i))
+
+	}
+	var destination = make([]string, 0, 10)
+	var copyLen = 0
+	copyLen = copy(destination, source)
+	fmt.Printf("copy to destination(len=%d)\t%v\n", len(destination), destination)
+
+	destination = make([]string, 5)
+	copyLen = copy(destination, source)
+	fmt.Printf("copy to destination(len=%d)\tcopylen=%d\t%v\n", len(destination), copyLen, destination)
+
+	destination = make([]string, 10)
+	copyLen = copy(destination, source)
+	fmt.Printf("copy to destination(len=%d)\tcopylen=%d\t%v\n", len(destination), copyLen, destination)
 }
 
 //切片是数组段的描述符。它包含了一个指向数组的指针ptr，数据段的长度len和容量cap
@@ -111,18 +150,24 @@ func TestSliceInter(t *testing.T) {
 	//  a == []string{"John", "Paul", "George", "Ringo", "Pete"}
 }
 
+//append()函数,在调用函数时，在栈区里面把1 2 3 添加到a里面然后重新分配了地址，而原来的s切片还是指向原来地址，所以需要重新指向然后返回
+// 切片用append函数的时候一定要注意，因为如果容量不足的时候会自动扩充，
+// 如果原来的地址后面没有足够的空间那么就会重新找一个足够大的空间来储存，所以切片利用append的时候地址是有可能变化的。
+// 扩容时容量翻倍
 func TestSliceAppend(t *testing.T) {
 	var s []int = []int{89, 4, 5, 6}
-	s = sliceAppend(s)
-	fmt.Println(s)
+	sp := &s
+	fmt.Printf("sAddr:%p,sPointAddr:%p\n", s, sp)
+	for i := 1; i < 100; i++ {
+		*sp = append(*sp, i*200000)
+	}
+	// 变量s地址变化，但是sp指针未变化
+	fmt.Printf("sAddr:%p,sPointAddr:%p\n", s, sp)
 }
 
-func sliceAppend(a []int) (b []int) {
-	//append()函数,在调用函数时，在栈区里面把1 2 3 添加到a里面然后重新分配了地址，而原来的s切片还是指向原来地址，
-	// 根本没有变,所以需要重新指向然后返回
-	// 切片用append函数的时候一定要注意，因为如果容量不足的时候会自动扩充，
-	// 如果原来的地址后面没有足够的空间那么就会重新找一个足够大的空间来储存，所以切片利用append的时候地址是有可能变化的。
-	// 那么底层数组肯定也得变化了?
-	b = append(a, 1, 2, 3)
-	return b
+func TestSliceSort(t *testing.T) {
+	s := []string{"b", "d", "c"}
+	sort.Strings(s)
+
+	fmt.Println(s)
 }

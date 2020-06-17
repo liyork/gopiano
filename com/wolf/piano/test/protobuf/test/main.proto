@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package main;
+
+option go_package = "main";
+
+// Request 请求结构
+message Request {
+    map<string,string> header = 1;
+    map<string,string> args = 2;
+}
+
+// Response 响应结构
+message Response {
+    int64 code = 1;
+    string message = 2;
+}
+
+// protoc --proto_path=. --proto_path=storyboard/ --go_out=plugins=grpc:storyboard storyboard.proto
+// 依然报错。。
+// protoc-gen-go: Go package "." has inconsistent names main (main.proto) and storyboard (storyboard.proto)
+//--go_out: protoc-gen-go: Plugin failed with status code 1.
+
+// 正确(当时放在test/src下)：
+// protoc --proto_path=/Users/lichao30/tmp/test/src --proto_path=/Users/lichao30/tmp/test/src/storyboard --go_out=src /Users/lichao30/tmp/test/src/storyboard/storyboard.proto
+// 要用绝对路径?
+
+// 本路径正确方式：
+// protoc --proto_path=/Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/test --proto_path=/Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/test/storyboard --go_out=/Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/test /Users/lichao30/goland_workspace/gopiano/com/wolf/piano/test/protobuf/test/storyboard/storyboard.proto
+// 这也太费劲了?...
+// 似乎go-control-plane人家用的绝对路径！

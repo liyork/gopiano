@@ -211,3 +211,19 @@ func demo3(person *Person2) {
 	(*person).age = 18     //显示的解引用
 	person.name = "GoLang" //隐式的解引用
 }
+
+func TestSwap(t *testing.T) {
+	a := 1
+	b := 2
+	swap(&a, &b)
+	fmt.Println(a, b)
+}
+
+func swap(a *int, b *int) {
+	var tmp int
+	// *a在等号右边为取地址的值
+	tmp = *a
+	// *a在等号左边为用值赋值给指定地址
+	*a = *b
+	*b = tmp
+}

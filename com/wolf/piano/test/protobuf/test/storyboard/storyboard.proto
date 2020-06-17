@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+import "main.proto";
+package storyboard;
+
+option go_package = "storyboard";
+
+// 定义服务
+service Storyboard {
+    // 定义方法
+    rpc Get(main.Request) returns (main.Response) {}
+    rpc List(main.Request) returns (main.Response) {}
+}
