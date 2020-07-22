@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/astaxie/beego v1.12.1
 	github.com/go-redis/redis v6.15.7+incompatible
+	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/gohouse/converter v0.0.3 // indirect
 	github.com/gohouse/gorose v1.0.5
@@ -22,7 +23,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	google.golang.org/grpc v1.29.1
-	google.golang.org/protobuf v1.24.0
+	google.golang.org/protobuf v1.25.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0

@@ -61,7 +61,7 @@ func Test_httpDo(t *testing.T) {
 
 // http.Client
 func Test_httpGET(t *testing.T) {
-	resp, err := http.Get("http://i.jsf.jd.com/addrs?sv=210&p=jsfRegistry&lan=java&label=session.huitian")
+	resp, err := http.Get("http://xxx/addrs?sv=210&p=qqq&lan=java&label=session.huitian")
 	if err != nil {
 		fmt.Println(err)
 		return

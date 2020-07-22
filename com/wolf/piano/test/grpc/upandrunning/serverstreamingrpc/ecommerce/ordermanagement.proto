@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+
+package ecommerce;
+
+service OrderManagement {
+    rpc searchOrders (google.protobuf.StringValue) returns (stream Order);
+}
+
+message Order {
+    string id = 1;
+    repeated string items = 2;
+    string description = 3;
+    float price = 4;
+    string destination = 5;
+}
+
+// protoc -I /Users/lichao30/gopath/pkg/mod/github.com/gogo/protobuf@v1.3.1/protobuf -I ecommerce --go_out=plugins=grpc:ecommerce ecommerce/ordermanagement.proto

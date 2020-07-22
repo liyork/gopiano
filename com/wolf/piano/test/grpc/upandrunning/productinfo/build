@@ -1,0 +1,9 @@
+// cd upandrunning/productinfo
+// 依赖：ecommerce，源：ecommerce/product_info.proto，输出目录：ecommerce
+// protoc -I ecommerce ecommerce/product_info.proto --go_out=plugins=grpc:ecommerce
+
+// cd service
+// go build -i -v -o bin/server
+
+// cd client
+// go build -i -v -o bin/client

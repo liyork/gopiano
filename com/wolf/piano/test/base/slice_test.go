@@ -43,7 +43,7 @@ func TestSliceBase(t *testing.T) {
 
 	//基于数组创建切片
 	x := [3]string{"Лайка", "Белка", "Стрелка"}
-	s1 := x[:] // s为指向x切片的引用
+	s1 := x[:] // s1为指向x切片的引用
 	fmt.Println(s1)
 }
 
@@ -170,4 +170,16 @@ func TestSliceSort(t *testing.T) {
 	sort.Strings(s)
 
 	fmt.Println(s)
+}
+
+func TestConvert(t *testing.T) {
+	var buf [1024]byte
+	fmt.Println("xx", reflect.TypeOf(buf).Kind())
+	fmt.Println("xx", reflect.TypeOf(buf[:]).Kind())
+	fmt.Println("xx", len(buf))
+	fmt.Println("xx", len(buf[:]))
+
+	var buf1 = make([]byte, 3333444433)
+	fmt.Println("xx", len(buf1[:333333]))
+	fmt.Println("xx", len(buf1))
 }
