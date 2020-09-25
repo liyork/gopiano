@@ -9,11 +9,10 @@ import (
 func TestDeepEqualArray(t *testing.T) {
 	// 顺序不同则不等。
 	var a = []string{"1", "2", "3"}
-	var b = []string{"1", "3", "2"}
+	var b = []string{"1", "3", "2"} // 换顺序
 	if !reflect.DeepEqual(a, b) {
 		fmt.Println("not equal")
 	}
-	fmt.Println("equal")
 }
 
 func TestDeepEqualMap(t *testing.T) {
@@ -25,6 +24,18 @@ func TestDeepEqualMap(t *testing.T) {
 	fmt.Println()
 	m3 := map[string]int{"a": 1, "b": 2, "c": 3, "d": 1}
 	fmt.Println("reflect.DeepEqual(m1,m3) = ", reflect.DeepEqual(m1, m3))
+}
+
+type Ae struct {
+	s string
+}
+
+func TestDeepEqualStruct(t *testing.T) {
+	a1 := Ae{s: "abc"}
+	a2 := Ae{s: "abc"}
+	if reflect.DeepEqual(a1, a2) {
+		fmt.Println(a1, "==", a2)
+	}
 }
 
 func TestDeepEqualInterface(t *testing.T) {

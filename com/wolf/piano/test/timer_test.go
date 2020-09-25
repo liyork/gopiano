@@ -78,3 +78,30 @@ func TestAfterFunc(t *testing.T) {
 
 	<-stopChan // 由于AfterFunc是异步，所以等待协成退出，不然单元测试直接退出。
 }
+
+// 由于被time.Sleep阻塞，所以下次timer时间就是这个5s
+func TestDelay(t *testing.T) {
+	duration := 2 * time.Second
+	timer := time.NewTimer(duration)
+
+	for {
+		select {
+		case <-timer.C:
+			fmt.Println("1111,", time.Now())
+			timer.Reset(duration)
+			time.Sleep(5 * time.Second)
+		}
+	}
+}
+
+func TestTimerImediate(t *testing.T) {
+	duration := 5 * time.Second
+	timer := time.NewTimer(1) //
+	for {
+		select {
+		case <-timer.C:
+			fmt.Println("1111111111")
+			timer.Reset(duration)
+		}
+	}
+}

@@ -39,3 +39,8 @@ func TestLogFlag(t *testing.T) {
 	log.Fatalln("fatal message")
 	log.Panicln("panic message")
 }
+
+func TestFatal(t *testing.T) {
+	log.Fatal("Fatal level log: log entry\n") // 输出信息后，程序终止执行
+	log.Println("Nomal level log: log entry")
+}

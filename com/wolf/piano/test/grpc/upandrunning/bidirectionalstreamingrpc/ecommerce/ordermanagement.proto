@@ -1,12 +1,14 @@
 syntax = "proto3";
 
-import "google/protobuf/wrappers.proto";
-
 package ecommerce;
 
 service OrderManagement {
-    rpc processOrders(stream google.protobuf.StringValue)
+    rpc processOrders(stream OrderReply)
         returns (stream CombinedShipment);
+}
+
+message OrderReply {
+    string message = 1;
 }
 
 message Order {
@@ -23,4 +25,5 @@ message CombinedShipment {
     repeated Order ordersList = 3;
 }
 
+// cd bidirectionalstreamingrpc
 // protoc -I /Users/lichao30/gopath/pkg/mod/github.com/gogo/protobuf@v1.3.1/protobuf -I ecommerce --go_out=plugins=grpc:ecommerce ecommerce/ordermanagement.proto

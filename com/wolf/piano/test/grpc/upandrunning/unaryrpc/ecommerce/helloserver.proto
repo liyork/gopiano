@@ -1,11 +1,18 @@
 syntax = "proto3";
 
-import "google/protobuf/wrappers.proto";
-
 package ecommerce;
 
 service HelloServer {
-    rpc hello(google.protobuf.StringValue) returns (google.protobuf.StringValue);
+    rpc hello (HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+    string id = 1;
+}
+
+
+message HelloResponse {
+    string value = 1;
 }
 
 // protoc -I /Users/lichao30/gopath/pkg/mod/github.com/gogo/protobuf@v1.3.1/protobuf -I ecommerce --go_out=plugins=grpc:ecommerce ecommerce/helloserver.proto

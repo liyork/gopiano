@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+func TestNilBase(t *testing.T) {
+	fmt.Println("nil,", nil)
+}
+
 func TestNil(t *testing.T) {
 	strings := make(map[string]map[string][]string)
 	fmt.Println("strings:", strings)

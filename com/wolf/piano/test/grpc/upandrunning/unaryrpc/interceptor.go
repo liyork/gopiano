@@ -18,7 +18,7 @@ func orderUnaryServerInterceptor(ctx context.Context, req interface{},
 	m, err := handler(ctx, req)
 
 	// Post processing logic
-	log.Printf(" Post Proc Message : %s", m)
+	log.Printf(" Post Proc Message : %s, err:%v", m, err)
 	return m, err
 }
 

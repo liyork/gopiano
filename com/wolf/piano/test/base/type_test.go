@@ -68,22 +68,3 @@ func TestTypeAssert2(t *testing.T) {
 		fmt.Println("float32", t2)
 	}
 }
-
-func TestByteBase(t *testing.T) {
-	var v2 uint32
-	var b2 [4]byte
-
-	// | 00000000 | 00000000 | 00000001 | 00000001 |
-	// | b2[0]    | b2[1]    | b2[2]    | b2[3]    |
-	v2 = 257
-	fmt.Printf("v2:%b\n", v2)
-
-	b2[3] = uint8(v2) // 直接转成uint8后等于 1，丢掉前24位
-	fmt.Println("b2:", b2)
-	b2[2] = uint8(v2 >> 8) // 移动后强转仅留8bit
-	fmt.Println("move b2 8:", b2)
-	b2[1] = uint8(v2 >> 16) // 移动16bit后
-	fmt.Println("move b2 16:", b2)
-	b2[0] = uint8(v2 >> 24)
-	fmt.Println("move b2 32:", b2)
-}

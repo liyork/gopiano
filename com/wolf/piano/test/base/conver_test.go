@@ -133,7 +133,22 @@ func TestByte2Int(t *testing.T) {
 	fmt.Println(y)
 
 	//fmt.Println(strings.Repeat("~", 20))
+}
 
+//struct String
+//{
+//        byte*   str;
+//        intgo   len;
+//};
+// 一块连续的内存，首地址+长度
+// 如果p里边有\0，他不会做处理这个时候，如果再对这个string做其他处理就可能出问题了，比如strconv.Atoi转成int就有错误
+func byteString(p []byte) string {
+	for i := 0; i < len(p); i++ {
+		if p[i] == 0 {
+			return string(p[0:i])
+		}
+	}
+	return string(p)
 }
 
 func TestString2Byte(t *testing.T) {

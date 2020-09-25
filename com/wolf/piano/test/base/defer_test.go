@@ -3,6 +3,7 @@ package base
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 // 一直等到包含defer语句的函数执行完毕时，延迟函数（defer后的函数）才会被执行，
@@ -57,4 +58,35 @@ func TestDeferUnder(t *testing.T) {
 
 func testP() {
 	panic(33333)
+}
+
+// panic: send on closed channel
+// defer在所属方法退出时进行调用，若有goroutine执行另一个方法产生panic，那么本调用方法defer不会执行，
+// 所以defer要放在目标方法中
+func TestNested(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			println("xx Start error, err:%v", err)
+		}
+	}()
+
+	ints := make(chan int)
+	go func() {
+		time.Sleep(5 * time.Second)
+		close(ints)
+	}()
+
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				println("xx Start error, err:%v", err)
+			}
+		}()
+		for {
+			ints <- 1
+			time.Sleep(2 * time.Second)
+		}
+	}()
+
+	time.Sleep(111 * time.Second)
 }

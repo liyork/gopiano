@@ -11,6 +11,8 @@ import (
 // var 声明同样也会为结构体类型的数据分配内存，所以才能在声明了 var s T 之后就能直接给他的字段进行赋值
 // 表达式 new(Type) 和 &Type{} 是等价的
 
+// 有两个原因需要使用指针接收者。首先避免在每个方法调用中拷贝值。其次，方法可以修改接收者指向的值。
+
 type A struct {
 	name string
 	age  int
@@ -285,4 +287,16 @@ func TestStructMethod(t *testing.T) {
 	studentPoint := &student
 	studentPoint.print1()
 	studentPoint.print2()
+}
+
+func TestPrintfStruct(t *testing.T) {
+	type Q struct {
+		a int
+		b float64
+		c string
+	}
+	q := &Q{7, -2.35, "abc\tdef"}
+	fmt.Printf("%v\n", q)
+	fmt.Printf("%+v\n", q)
+	fmt.Printf("%#v\n", q)
 }

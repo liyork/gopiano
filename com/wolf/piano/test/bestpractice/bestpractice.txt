@@ -1,0 +1,178 @@
+某个应用需要适配一个灵活的环境
+不希望每过 3 到 4 个月就不得不将它们全部重构一遍。
+添加新的特性应当很容易。
+应当可以被理解，且维护简单。
+bug 应该容易被发现并且可以快速的修复
+
+1.只使用单一的 GOPATH
+
+2.如果需要退出循环，将 for-select 封装到函数中
+func main() {
+	foo()
+	fmt.Println("ending")
+}
+
+func foo() {
+	for {
+		select {
+		case &lt;-time.After(time.Second):
+			fmt.Println("hello")
+		default:
+			return
+		}
+	}
+}
+直接用return就不用break+label了
+
+
+3.在初始化结构体时使用带有标签的语法
+type T struct {
+	Foo string
+	Bar int
+	Qux string
+}
+
+func main() {
+	t := T{Foo: "example", Qux: 123}
+	fmt.Printf("t %+v\n", t)
+}
+弹性也好。不论你如何添加其他字段到T结构体。你的代码总是能编译，并且在以后的 Go 的版本也可以保证这一点。
+只要在代码集中执行go vet，就可以发现所有的无标签的语法
+
+
+4.将结构体的初始化拆分到多行
+T{
+Foo: "example",
+Bar: someLongVariable,
+Qux: anotherLongVariable,
+B: forgetToAddThisToo,
+}
+容易阅读，其次它使得允许或屏蔽字段初始化变得容易（只要注释或删除它们），最后添加其他字段也更容易（只要添加一行）。
+
+5.为整数常量添加 String() 方法
+如果你利用 iota 来使用自定义的整数枚举类型，务必要为其添加 String() 方法
+[enum_test.go]
+
+6.让 iota 从 a +1 开始增量，可以区分默认值和未赋值情况
+
+7.将 slice 或 map 定义成自定义类型可以让代码维护起来更加容易，封装
+type Server struct {
+	Name string
+}
+
+func ListServers() []Server {
+	return []Server{
+		{Name: "Server1"},
+		{Name: "Server2"},
+		{Name: "Foo1"},
+		{Name: "Foo2"},
+	}
+}
+
+现在假设需要获取某些特定名字的服务器。需要对 ListServers() 做一些改动，增加筛选条件：
+func main() {
+	servers := ListServers("Foo")
+
+	// 输出：“servers [{Name:Foo1} {Name:Foo2}]”
+	fmt.Printf("servers %+v\n", servers)
+}
+
+显然这个函数能够正常工作。不过它的弹性并不好。如果你想对服务器集合引入其他逻辑的话会如何呢？
+例如检查所有服务器的状态，为每个服务器创建一个数据库记录，用其他字段进行筛选等等……
+现在引入一个叫做Servers的新类型，并且修改原始版本的 ListServers() 返回这个新类型：
+
+type Servers []Server
+
+// ListServers 返回服务器列表
+func ListServers() Servers {
+	return []Server{
+		{Name: "Server1"},
+		{Name: "Server2"},
+		{Name: "Foo1"},
+		{Name: "Foo2"},
+	}
+}
+现在需要做的是只要为Servers类型添加一个新的Filter()方法：
+// Filter 返回包含 name 的服务器。空的 name 将会返回所有服务器。
+func (s Servers) Filter(name string) Servers {
+	filtered := make(Servers, 0)
+
+	for _, server := range s {
+		if strings.Contains(server.Name, name) {
+			filtered = append(filtered, server)
+		}
+
+	}
+
+	return filtered
+}
+现在可以针对字符串Foo筛选服务器：
+
+func main() {
+	servers := ListServers()
+	servers = servers.Filter("Foo")
+	fmt.Printf("servers %+v\n", servers)
+}
+这就是封装
+
+8.withContext 封装函数，重复利器，类似于抽象类，不过是传递函数而已
+有时对于函数会有一些重复劳动，例如锁/解锁，初始化一个新的局部上下文，准备初始化变量等等
+
+如果你想要修改某个内容，你需要对所有的都进行修改。如果它是一个常见的任务，那么最好创建一个叫做withContext的函数。这个函数的输入参数是另一个函数，并用调用者提供的上下文来调用它：
+func withLockContext(fn func()) {
+	mu.Lock
+	defer mu.Unlock()
+
+	fn()
+}
+func foo() {
+	withLockContext(func() {
+		// foo 相关工作
+	})
+}
+
+func bar() {
+	withLockContext(func() {
+		// bar 相关工作
+	})
+}
+这个方法有个缺陷，它增加了缩进并且更难阅读。再次提示，永远寻找最简单的解决方案
+
+9.如果你重度使用 map 读写数据，那么就为其添加 getter 和 setter 吧
+假设你在其他地方也使用这个 map。你必须把互斥量放得到处都是
+通过 getter 和 setter 函数就可以很容易的避免这个问题：
+
+func Put(key, value string) {
+	mu.Lock()
+	m[key] = value
+	mu.Unlock()
+}
+func Delete(key string) {
+	mu.Lock()
+	delete(m, key)
+	mu.Unlock()
+}
+使用接口可以对这一过程做进一步的改进。你可以将实现完全隐藏起来。只使用一个简单的、设计良好的接口，然后让包的用户使用它们：
+type Storage interface {
+	Delete(key string)
+	Get(key string) string
+	Put(key, value string)
+}
+对于底层的实现使用什么都没关系。不光是使用接口本身很简单，而且还解决了暴露内部数据结构带来的大量的问题。
+又是封装的作用！
+
+抽象永远都不是容易的事情。有时，最简单的就是你已经实现的方法。要知道，不要让你的代码看起来很聪明。
+Go 天生就是个简单的语言，在大多数情况下只会有一种方法来作某事。简单是力量的源泉，也是为什么在人的层面它表现的如此有弹性。
+仅在你有一个合理的理由的情况下这么做。
+再次提醒，永远保持简单。
+
+
+
+
+
+
+
+
+
+
+

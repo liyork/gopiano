@@ -227,3 +227,50 @@ func swap(a *int, b *int) {
 	*a = *b
 	*b = tmp
 }
+
+type Teacher1 struct {
+	High int32
+	Sex  int32
+}
+
+type Teacher2 struct {
+	*Teacher1
+}
+
+func (t *Teacher1) String() string {
+	return fmt.Sprintf("{High:%d,Sex:%d}", t.High, t.Sex)
+}
+
+func TestPrintPointer(t *testing.T) {
+	// 结构体指针的数组2
+	arr2 := []*Teacher1{
+		&Teacher1{High: 170, Sex: 17},
+		&Teacher1{High: 180, Sex: 18},
+	}
+	fmt.Printf("打印结构体指针数组2：%+v \n", arr2)
+
+	teacher2 := Teacher2{Teacher1: &Teacher1{High: 1111, Sex: 111}}
+	fmt.Printf("teacher:%+v\n", teacher2)
+}
+
+type person struct {
+	name string
+}
+
+// tom是person对象的指针
+var p = person{name: "xxxx"}
+var tom *person = &p
+
+func TestPointer(t *testing.T) {
+	// 使用%+v来打印tom指针(打印的是tom指向的内容)
+	fmt.Printf("%+v\n", tom)
+	// &tom创建一个指针，指向tom，打印是&tom指针指向的内容
+	fmt.Printf("%+v\n", &tom)
+
+	// %p打印指针地址
+	fmt.Printf("%p\n", tom)
+	fmt.Printf("%p\n", &tom)
+
+	//fmt.Printf("%+v\n", p)
+	//fmt.Printf("%p\n", &p)
+}

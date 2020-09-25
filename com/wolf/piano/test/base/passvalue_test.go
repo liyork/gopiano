@@ -34,19 +34,32 @@ func passArray(a [1]int) {
 	a[0] = 1111
 }
 
+func passArrayPointer(a *[1]int) {
+	(*a)[0] = 1111
+}
+
 func TestPassArray(t *testing.T) {
 	arr := [1]int{1}
 	passArray(arr)
 	fmt.Println(arr)
 }
 
-// slice传递时地址拷贝
-func passSlice(a []int) {
-	a[0] = 1111
+// 传递数组的引用
+func TestPassArrayPointer(t *testing.T) {
+	arr := [1]int{1}
+	passArrayPointer(&arr)
+	fmt.Println(arr)
 }
 
 func TestPassSlice(t *testing.T) {
 	arr := []int{1}
 	passSlice(arr)
-	fmt.Println(arr)
+	fmt.Printf("in TestPassSlice, p:%p, v:%v\n", &arr, arr)
+}
+
+// slice传递的是切片拷贝，但是底层用的一个数组
+func passSlice(a []int) {
+	// 修改底层array
+	a[0] = 1111
+	fmt.Printf("in passSlice, p:%p, v:%v\n", &a, a)
 }

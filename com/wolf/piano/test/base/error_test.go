@@ -48,3 +48,16 @@ func occurErrorPoint() *error {
 	fmt.Println("&e1", &e)
 	return &e
 }
+
+type customError struct {
+	code int
+	msg  string
+}
+
+func (e *customError) Error() string {
+	// 注意判断nil问题
+	if e == nil {
+		return ""
+	}
+	return fmt.Sprintf("custom error, msg:%v", e.msg)
+}

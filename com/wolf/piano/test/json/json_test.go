@@ -193,6 +193,21 @@ type StuRead struct {
 	Test interface{}
 }
 
+type StuReadCommon struct {
+	Name  interface{} `json:"name"`
+	Age   interface{}
+	HIgh  interface{}
+	sex   interface{}
+	Class interface{} `json:"class"`
+	//Class Class `json:"class"`
+	//Class *Class `json:"class"`
+	Test interface{}
+}
+
+type StuRead3 struct {
+	*StuReadCommon
+}
+
 // 解析时，接收体可自行定义。json串中的key自动在接收体中寻找匹配的项进行赋值。匹配规则是：
 //
 //先查找与key一样的json标签，找到则赋值给该标签对应的变量(如Name)。
@@ -249,6 +264,18 @@ func TestUnMarshal2(t *testing.T) {
 	fmt.Println("class:", cla)
 }
 
+// 通过继承属性方式，不要再指定StuReadCommon的`json
+func TestUnMarshal3(t *testing.T) {
+	data := "{\"name\":\"张三\",\"Age\":18,\"high\":true,\"sex\":\"男\",\"CLASS\":{\"naME\":\"1班\",\"GradE\":3}}"
+	str := []byte(data)
+
+	//第二个参数必须是指针，否则无法接收解析的数据，如stu仍为空对象StuRead{}
+	stu := &StuRead3{}
+	json.Unmarshal(str, stu)
+
+	fmt.Printf("stu:,%+v", stu)
+}
+
 // interface{}类型变量在json解析前，打印出的类型都为nil，就是没有具体类型，这是空接口（interface{}类型）的特点。
 //
 //json解析后，json串中value，只要是”简单数据”，都会按照默认的类型赋值，如”张三”被赋值成string类型到Name变量中，数字18对应float64，true对应bool类型。
@@ -269,4 +296,25 @@ func printType(stu *StuRead) {
 	fmt.Println("sexType:", sexType)
 	fmt.Println("classType:", classType)
 	fmt.Println("testType:", testType)
+}
+
+type Movie2 struct {
+	Title  string
+	Actors []string
+}
+
+type Movie3 struct {
+	Title1 string
+	m2     Movie2
+}
+
+// 对于m2结构体，反序列化后是有默认结构体，里面属性是默认值
+func TestUnMarshalNilStruct(t *testing.T) {
+	data := "{\"title1\":\"张三\"}"
+	str := []byte(data)
+
+	stu := &Movie3{}
+	err := json.Unmarshal(str, stu)
+
+	fmt.Println(stu, err)
 }

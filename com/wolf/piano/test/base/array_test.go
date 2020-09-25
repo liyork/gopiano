@@ -43,3 +43,25 @@ func Test_array(t *testing.T) {
 		fmt.Println(i, v)
 	}
 }
+
+func TestArrayLen(t *testing.T) {
+
+	var arr [8]int = [8]int{1, 2}
+	fmt.Println("arr", arr)
+	fmt.Println("len:", len(arr))
+	fmt.Println("cap:", cap(arr))
+}
+
+func TestArraySlice(t *testing.T) {
+
+	var arr [8]int = [8]int{1, 2}
+	fmt.Println("arr", arr)
+
+	ints := arr[0:4]
+	fmt.Printf("%T\n", ints) // 切片
+
+	ints = append(ints, 5)
+	fmt.Println("ints:", ints)
+}
+
+// 参见passvalue_test.go

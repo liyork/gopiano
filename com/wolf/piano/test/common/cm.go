@@ -7,12 +7,22 @@ import (
 	"time"
 )
 
+func test1() {
+	fmt.Println("111111")
+	test2()
+}
+
+func test2() {
+	fmt.Println("222222")
+}
+
 func startGoRoutine1() {
 	fmt.Println("startGoRoutine1 ...")
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
 			fmt.Println("111")
+			test1()
 		}
 	}()
 }

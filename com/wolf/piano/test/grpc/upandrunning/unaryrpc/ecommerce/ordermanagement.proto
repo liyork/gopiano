@@ -1,11 +1,9 @@
 syntax = "proto3";
 
-import "google/protobuf/wrappers.proto";
-
 package ecommerce;
 
 service OrderManagement {
-    rpc getOrder(google.protobuf.StringValue) returns (Order);
+    rpc getOrder (OrderRequest) returns (Order);
 }
 
 message Order {
@@ -15,6 +13,10 @@ message Order {
     string description = 3;
     float price = 4;
     string destination = 5;
+}
+
+message OrderRequest {
+    string value = 1;
 }
 
 // protoc -I /Users/lichao30/gopath/pkg/mod/github.com/gogo/protobuf@v1.3.1/protobuf -I ecommerce --go_out=plugins=grpc:ecommerce ecommerce/ordermanagement.proto

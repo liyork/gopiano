@@ -2,6 +2,7 @@ package helloworld
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -36,11 +37,13 @@ func TestClientBase(t *testing.T) {
 	if len(os.Args) > 1 {
 		name = os.Args[1]
 	}
-	// 超时
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	// 超时,could not greet: rpc error: code = DeadlineExceeded desc = context deadline exceeded
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	fmt.Println("time1:", time.Now())
 	r, err := c.SayHello(ctx, &pb.HelloRequest{Name: name})
+	fmt.Println("time2:", time.Now())
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}

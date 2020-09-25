@@ -1,10 +1,6 @@
 package base
 
-import (
-	"fmt"
-	"strconv"
-	"testing"
-)
+import "strconv"
 
 type Person struct {
 	name string
@@ -19,11 +15,6 @@ type Person2 struct {
 }
 
 // toString
-func (p *Person) String() string {
+func (p Person) String() string {
 	return p.name + "_" + strconv.Itoa(p.age)
-}
-
-func TestToString(t *testing.T) {
-	person := &Person{"abc", "man", 11}
-	fmt.Println(person)
 }

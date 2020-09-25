@@ -16,6 +16,7 @@ func doSomething() {
 }
 
 func TestRuntimeBase(t *testing.T) {
+	// logical CPUs
 	cpu := runtime.NumCPU()
 	fmt.Println("本机cpu核数:", cpu)
 
