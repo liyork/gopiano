@@ -47,4 +47,8 @@ func TestTimeDiff(t *testing.T) {
 	i := timestr{} // 默认有值0001-01-01 00:00:00 +0000
 	fmt.Println(time.Now().Sub(i.lasttime) < 2*time.Second)
 
+	t2 := time.Now()
+	//50s前
+	t3 := time.Now().Add(time.Second * 50)
+	fmt.Println("t2与t1相差：", t3.Sub(t2))
 }

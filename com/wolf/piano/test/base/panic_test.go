@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime/debug"
 	"testing"
+	"time"
 )
 
 // Go 语言官方表态不要轻易使用 panic recover，除非你真的无法预料中间可能会发生的错误，或者它能非常显著地简化你的代码。
@@ -13,16 +14,21 @@ import (
 
 //Recover内建函数，可以让进入宕机流程中的 goroutine 恢复过来，recover 仅在延迟函数 defer 中有效，在正常的执行过程中，调用 recover 会返回 nil 并且没有其他任何效果，
 
-func TestPanic(t *testing.T) {
+func TestPanicBase(t *testing.T) {
 	testOccurPanic()
 	fmt.Println("111")
 }
 
+func TestPanicDefer(t *testing.T) {
+	testOccurPanicDefer()
+}
+
 // Golang中引入两个内置函数panic和recover来触发和终止异常处理流程
 // 当程序运行时，如果遇到引用空指针、下标越界或显式调用panic函数等情况，则先触发panic函数的执行，然后调用延迟函数。
-// 继续向上传递panic，因此该过程一直在调用栈中重复发生：函数停止执行，调用延迟执行函数等。
+// 之后继续向上传递panic，因此该过程一直在调用栈中重复发生：函数停止执行，调用延迟执行函数等。
 // 如果一路在延迟函数中没有recover函数的调用，则会到达该携程的起点，该携程结束，然后终止其他所有携程，包括主携程。
 func TestRecover(t *testing.T) {
+	// 在defer中使用recover来捕获panic，禁止panic向上传递，从而避免整个程序的退出
 	defer func() {
 		if err := recover(); err != nil {
 			t.Errorf("testOccurPanic error: %v\n", err)
@@ -37,6 +43,16 @@ func TestRecover(t *testing.T) {
 
 func testOccurPanic() {
 	panic(22222)
+	// 有panic则下面不执行，立马返回
+	fmt.Println("333333")
+}
+
+// 即使遇到panic，也先执行defer再向上传递
+func testOccurPanicDefer() {
+	defer println(4444)
+	panic(22222)
+	// 有panic则下面不执行，立马返回
+	fmt.Println("333333")
 }
 
 func TestPassError(t *testing.T) {
@@ -92,4 +108,48 @@ func TestConcurrentIsNotRecover(t *testing.T) {
 	for {
 		fmt.Println("m[0]:", m[0])
 	}
+}
+
+// 只能携程内自己进行捕获panic
+func TestRecoverScope(t *testing.T) {
+	RecoverScopeCorrrect()
+	//RecoverScopeErr()
+}
+
+func RecoverScopeCorrrect() {
+	// 可以在携程中用defer捕获到协成内的panic
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recoverd in f", r)
+			}
+		}()
+		time.Sleep(time.Second * 2)
+		panic(1)
+	}()
+
+	for {
+		fmt.Println("sleeping...")
+		time.Sleep(time.Second * 4)
+	}
+}
+
+// 主程序并不能捕获到子协成的panic
+func RecoverScopeErr() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recoverd in f", r)
+		}
+	}()
+
+	go func() {
+		time.Sleep(time.Second * 2)
+		panic(1)
+	}()
+
+	for {
+		fmt.Println("sleeping...")
+		time.Sleep(time.Second * 4)
+	}
+
 }

@@ -6,6 +6,31 @@ import (
 	"time"
 )
 
+// defer的原意是推迟、延期。它的思想类似与C++的析构函数，不过go语言中的析构的不是对象，而是函数，defer就是用来添加函数结束时执行的语句。
+//注意这里强调的是添加，而不是指定，即可以有多个。因为不同于C++中的析构函数是静态的，Go中的defer是动态的。
+func TestDeferBase(t *testing.T) {
+	fmt.Println("result1:", Defer1())
+	fmt.Println("result2:", Defer2())
+}
+
+// 返回之前，调用defer，进行+1
+// 应该是返回0，但是赋值给result了，然后defer中++就更新了然后返回
+func Defer1() (result int) {
+	defer func() {
+		result++
+	}()
+	return 0
+}
+
+// 应该是先执行return 0，然后defer中再对result进行操作不影响结果了
+func Defer2() int {
+	var result = 0
+	defer func() {
+		result++
+	}()
+	return result
+}
+
 // 一直等到包含defer语句的函数执行完毕时，延迟函数（defer后的函数）才会被执行，
 // 而不管函数是通过return的正常结束，还是由于panic导致的异常结束。
 func TestDefer(t *testing.T) {
@@ -20,9 +45,8 @@ func return1() int {
 	return 1
 }
 
-// defer声明和执行顺序相反
+// defer声明和执行顺序相反，defer栈,后进先出
 func TestDeferSeq(t *testing.T) {
-
 	defer println(1111)
 	defer println(222)
 	fmt.Println("3333")

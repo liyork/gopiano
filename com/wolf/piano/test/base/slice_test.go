@@ -18,7 +18,6 @@ import (
 //切片类型的定义如[]T，其中T是切片中元素的类型。与数组类型不同，切片类型没有固定的长度。
 //定义一个切片和定义一个数组的语法相似，唯一的不同是不需要定义切片长度。
 func TestSliceBase(t *testing.T) {
-
 	letters := []string{"a", "b", "c", "d"}
 	fmt.Println(letters)
 
@@ -55,6 +54,7 @@ func TestSliceUpdate(t *testing.T) {
 	fmt.Println(a, " xxxx ", b)
 }
 
+// slice没有删除元素的函数。可以使用数组切片重新组合的方式来删除一个或多个项。不过从数组切片这种数据结构来看，本身并不适合做删除操作，所以尽量减少使用
 func TestSliceDelete(t *testing.T) {
 	a := []int{1, 2, 3}
 	index := 1
@@ -88,9 +88,10 @@ func TestSliceCopy(t *testing.T) {
 		source = append(source, fmt.Sprintf("%v", i))
 
 	}
+
+	// 按照len最小的拷贝
 	var destination = make([]string, 0, 10)
-	var copyLen = 0
-	copyLen = copy(destination, source)
+	copyLen := copy(destination, source)
 	fmt.Printf("copy to destination(len=%d)\t%v\n", len(destination), destination)
 
 	destination = make([]string, 5)
@@ -153,7 +154,7 @@ func TestSliceInter(t *testing.T) {
 //append()函数,在调用函数时，在栈区里面把1 2 3 添加到a里面然后重新分配了地址，而原来的s切片还是指向原来地址，所以需要重新指向然后返回
 // 切片用append函数的时候一定要注意，因为如果容量不足的时候会自动扩充，
 // 如果原来的地址后面没有足够的空间那么就会重新找一个足够大的空间来储存，所以切片利用append的时候地址是有可能变化的。
-// 扩容时容量翻倍
+// 扩容方式与vector类似，1024字节以下是每次cap增加一倍，1024以上是每次cap增加1/4
 func TestSliceAppend(t *testing.T) {
 	var s []int = []int{89, 4, 5, 6}
 	sp := &s
@@ -182,4 +183,52 @@ func TestConvert(t *testing.T) {
 	var buf1 = make([]byte, 3333444433)
 	fmt.Println("xx", len(buf1[:333333]))
 	fmt.Println("xx", len(buf1))
+}
+
+// golang数组切片解决的问题：golang数组长度在定义之后无法再次修改，并且数组是值类型，每次传递都将产生一份副本
+//golang数组切片拥有独立的数据结构，可抽象为3个变量：一个指向原数组的指针，数组切片中元素个数，数组切片分配的存储空间
+func TestSliceFromSlice(t *testing.T) {
+	oldSlice := make([]int, 5, 10)
+	// 范围不能超过oldSlice的capacity
+	newSlice := oldSlice[:4]
+
+	fmt.Println("Length   of oldSlice: ", len(oldSlice)) // 5
+	fmt.Println("Capacity of oldSlice: ", cap(oldSlice)) // 10
+	fmt.Println("oldSlice: ", oldSlice)
+
+	fmt.Println("Length   of newSlice: ", len(newSlice)) // 8
+	// 相同capacity
+	fmt.Println("Capacity of newSlice: ", cap(newSlice)) // 10
+	fmt.Println("newSlice: ", newSlice)
+
+}
+
+// 与数组相比，数组切片多了一个capacity的概念，即当前容纳的元素个数len和分配的空间capacity可以是两个不同的值。
+//capacity，可以理解为最大容纳元素个数，最大容纳元素个数减去当前容纳元素个数剩下的空间是隐藏的，不能直接使用。如果要往隐藏空间中新增元素，可以使用append()函数。
+//取得当前容纳元素个数可以使用len()函数，取得最大容纳元素个数可以使用cap()函数。
+
+func TestEstimate(t *testing.T) {
+	b := make([]int, 1024)
+	b[0] = 1
+	// 导致扩容
+	//b = append(b, 99)
+	fmt.Println("len:", len(b), "cap:", cap(b))
+}
+
+// 扩容
+//两条规则：
+//如果切片的容量小于1024个元素，那么扩容的时候slice的cap就翻番，乘以2；一旦元素个数超过1024个元素，增长因子就变成1.25，即每次增加原来容量的四分之一。
+//如果扩容之后，还没有触及原数组的容量，那么，切片中的指针指向的位置，就还是原数组，如果扩容之后，超过了原数组的容量，那么，Go就会开辟一块新的内存，把原来的值拷贝过来，这种情况丝毫不会影响到原数组。
+func TestScale(t *testing.T) {
+	arr := [4]int{10, 20, 30, 40}
+	slice := arr[0:2]
+	fmt.Println("slice==>", slice, len(slice), cap(slice))
+	testSlice1 := slice // [10,20]
+	fmt.Println("testSlice1==>", testSlice1, len(testSlice1), cap(testSlice1))
+	testSlice2 := append(append(append(slice, 1), 2), 3) // [10,20,1,2,扩容*2-->,3,0,0,0]
+	fmt.Println("testSlice2==>", testSlice2, len(testSlice2), cap(testSlice2))
+	slice[0] = 11
+
+	fmt.Println(testSlice1[0])
+	fmt.Println(testSlice2[0])
 }

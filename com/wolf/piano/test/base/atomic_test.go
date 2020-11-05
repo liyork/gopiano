@@ -68,3 +68,11 @@ func TestForAdd(t *testing.T) {
 
 	//time.Sleep(11111 * time.Second)
 }
+
+func TestAtomicValue(t *testing.T) {
+	value := atomic.Value{}
+	value.Store(1)
+	x := value.Load()
+	fmt.Println("x", x)
+
+}

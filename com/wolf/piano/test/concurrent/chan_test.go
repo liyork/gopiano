@@ -2,6 +2,7 @@ package concurrent
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"runtime"
 	"sync"
@@ -46,7 +47,30 @@ import (
 
 // go中通过channel进行消息通信，channel函数传参通过引用实现
 
-// range不等到信道关闭是不会结束读取的。
+// channel介绍
+//golang社区口号：不要通过共享内存来通信，而应该通过通信来共享内存。 通过消息来传递内存
+//golang提供一种基于消息机制而非共享内存的通信模型。消息机制认为每个并发单元都是自包含的独立个体，并且拥有自己的变量，但在不同并发单元间这些变量不共享。每个并发单元的输入和输出只有一种，那就是消息
+//channel是golang在语言级提供的goroutine间的通信方式，可以使用channel在两个或多个goroutine之间传递消息
+//channel是进程内的通信方式，如果需要跨进程通信，建议使用分布式的方法来解决，比如使用Socket或HTTP等通信协议
+//channel是类型相关的，即一个channel只能传递一种类型的值，需要在声明channel时指定。可以认为channel是一种类型安全的管道
+//
+//var chanName chan ElementType
+//var ch chan int            // int类型channel
+//var m map[string]chan bool // bool类型channel的map
+//
+//应该在生产者处关闭channel，而不是消费者处关闭channel，否则容易引起panic。
+//
+//channel读写语法
+//向无缓冲的channel写入数据会导致该goroutine阻塞，直到其他goroutine从这个channel中读取数据
+//向带缓冲的且缓冲已满的channel写入数据会导致该goroutine阻塞，直到其他goroutine从这个channel中读取数据
+//向带缓冲的且缓冲未满的channel写入数据不会导致该goroutine阻塞
+//从无缓冲的channel读出数据，如果channel中无数据，会导致该goroutine阻塞，直到其他goroutine向这个channel中写入数据
+//从带缓冲的channel读出数据，如果channel中无数据，会导致该goroutine阻塞，直到其他goroutine向这个channel中写入数据
+//从带缓冲的channel读出数据，如果channel中有数据，该goroutine不会阻塞
+//总结：无缓冲的channel读写通常都会发生阻塞，带缓冲的channel在channel满时写数据阻塞，在channel空时读数据阻塞
+//阻塞同步队列
+
+// range不等到信道关闭是不会结束读取的，会一直阻塞读取，直到close
 func TestChanRangeErr(t *testing.T) {
 	ch := make(chan int, 3)
 	ch <- 1
@@ -79,7 +103,7 @@ func TestChanRangeCorrectWarn(t *testing.T) {
 }
 
 // 显式地关闭信道
-func TestChanRangeCorrectCorrect(t *testing.T) {
+func TestChanRangeCorrect(t *testing.T) {
 	ch := make(chan int, 3)
 	ch <- 1
 	ch <- 2
@@ -91,6 +115,7 @@ func TestChanRangeCorrectCorrect(t *testing.T) {
 	// 被关闭的信道会禁止数据流入, 是只读的。可以从关闭的信道中取出剩余数据。
 	for v := range ch {
 		fmt.Println(v)
+		time.Sleep(time.Second)
 	}
 }
 
@@ -365,6 +390,20 @@ func processWithChanel(chann chan int) {
 	// there is error
 	close(chann)
 }
+
+// select操作，相对于range能处理多个chan
+//golang中的select关键字用于处理异步IO，可以与channel配合使用
+//golang中的select的用法与switch语言非常类似，不同的是select每个case语句里必须是一个IO操作
+//select会一直等待等到某个case语句完成才结束
+//
+//select {
+//case <-chan1:
+//    // 如果chan1成功读到数据，则进行该case处理语句
+//case chan2 <- 1:
+//    // 如果成功向chan2写入数据，则进行该case处理语句
+//default:
+//    // 如果上面都没有成功，则进入default处理流程
+//}
 
 func TestChanTimeout(t *testing.T) {
 	ch := make(chan int, 1)
@@ -777,6 +816,8 @@ func TestNilChan(t *testing.T) {
 }
 
 // 读取closed chan返回变量的零值
+//判断channel关闭
+//在读取的时候使用多重返回值来判断一个channel是否已经被关闭
 func TestReadFromClosedChan(t *testing.T) {
 	ch := make(chan int, 0)
 
@@ -929,4 +970,53 @@ func TestGoroutineLeak(t *testing.T) {
 	go func() { q <- "china" }()
 	<-q
 	fmt.Println("111")
+}
+
+func MyRoutineFunc(ch chan int) {
+	// 函数处理
+	ch <- 1
+
+	fmt.Println("MyRoutineFunc process finished.")
+}
+
+// 主函数等待所有goroutine完成后返回
+//我们已经知道golang程序从main()函数开始执行，当main()函数返回时，程序结束且不等待其他goroutine结束。如果main函数使用time.Sleep方式阻塞等待所有goroutine返回，那么这个休眠时间势必无法控制精确。通过使用channel可以很好解决这个问题
+func TestWaitForAll(t *testing.T) {
+	chs := make([]chan int, 10)
+
+	for i := 0; i < 10; i++ {
+		chs[i] = make(chan int)
+		go MyRoutineFunc(chs[i])
+	}
+
+	for _, ch := range chs {
+		<-ch
+	}
+
+	fmt.Println("All goroutine finished.")
+}
+
+//WorkChanOut 工作流
+func WorkChanOut(i int, sd chan int, stopC chan<- bool) {
+	for {
+		sum := <-sd
+		if sum == 50 {
+			stopC <- true
+			return
+		}
+		sum++
+		log.Println(i, ":", sum)
+		sd <- sum
+	}
+}
+
+// 三个线程的开始排序是不同的，接下来的输出都是以这种顺序输出(012)
+func TestRoutineChanSeq(t *testing.T) {
+	sd := make(chan int)
+	stopC := make(chan bool)
+	for i := 0; i < 3; i++ {
+		go WorkChanOut(i, sd, stopC)
+	}
+	sd <- 0
+	log.Println("stop", <-stopC)
 }

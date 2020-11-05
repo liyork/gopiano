@@ -14,7 +14,9 @@ import (
 // 意味着，将一个数组当作一个参数传递时，会完全拷贝数组中的内容（如果不想完全拷贝数组，可以传一个指向数组的指针）。
 //可以把数组当成这样一种结构，它具有索引，有着固定的大小，可以用来存储同类型的元素。
 func TestArrayBase(t *testing.T) {
+	// 声明式带有固定长度
 	var a [4]int
+	// 0下标为1，其他默认0
 	a[0] = 1
 
 	for _, x := range a {
@@ -24,7 +26,6 @@ func TestArrayBase(t *testing.T) {
 }
 
 func Test_array(t *testing.T) {
-
 	// 定义一：var 数组名  [元素个数]数据类型
 	var arr [8]int = [8]int{1, 2} // 部分初始化，默认0
 	fmt.Println("arr", arr)
@@ -45,7 +46,6 @@ func Test_array(t *testing.T) {
 }
 
 func TestArrayLen(t *testing.T) {
-
 	var arr [8]int = [8]int{1, 2}
 	fmt.Println("arr", arr)
 	fmt.Println("len:", len(arr))
@@ -53,15 +53,21 @@ func TestArrayLen(t *testing.T) {
 }
 
 func TestArraySlice(t *testing.T) {
-
 	var arr [8]int = [8]int{1, 2}
 	fmt.Println("arr", arr)
 
+	// slice
 	ints := arr[0:4]
 	fmt.Printf("%T\n", ints) // 切片
 
 	ints = append(ints, 5)
 	fmt.Println("ints:", ints)
+
+	//var target []int， 拷贝回给target扩容，所以原先引用不能获取实际值
+	var target = make([]int, 5)
+	copy(target, ints)
+	fmt.Println("target:", target)
 }
 
 // 参见passvalue_test.go
+// go语言则是在编译期间就确定其大小，然后始终是作为值传递的

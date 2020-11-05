@@ -9,31 +9,7 @@
 GODEBUG='gctrace=1' ./snippet_mem
 设置gctrace=1会使得垃圾回收器在每次回收时汇总所回收内存的大小以及耗时， 并将这些内容汇总成单行内容打印到标准错误输出中。
 
-gc # @#s #%: #+#+# ms clock, #+#/#/#+# ms cpu, #->#-># MB, # MB goal, # P  
-含义：
-gc  #        GC次数的编号，每次GC时递增
-    @#s         距离程序开始执行时的时间
-    #%          GC占用的执行时间百分比
-    #+...+#     GC使用的时间
-    #->#-># MB  GC开始，结束，以及当前活跃堆内存的大小，单位M
-    # MB goal   全局堆内存大小
-    # P         使用processor的数量
-如果每条信息最后，以(forced)结尾，那么该信息是由runtime.GC()调用触发
-
-选择其中一行来解释一下：
-gc 17 @0.149s 1%: 0.004+36+0.003 ms clock, 0.009+0/0.051/36+0.006 ms cpu, 181->181->101 MB, 182 MB goal, 2 P		
-含义如下：
-gc 17: Gc 调试编号为17
-@0.149s:此时程序已经执行了0.149s
-1%: 0.149s中其中gc模块占用了1%的时间
-0.004+36+0.003 ms clock: 垃圾回收的时间，分别为STW（stop-the-world）清扫的时间+并发标记和扫描的时间+STW标记的时间
-0.009+0/0.051/36+0.006 ms cpu: 垃圾回收占用cpu时间
-181->181->101 MB： GC开始前堆内存181M， GC结束后堆内存181M，当前活跃的堆内存101M
-182 MB goal: 全局堆内存大小
-2 P: 本次GC使用了2个P(调度器中的Processer)
-		
-接下来我们来分析一下本次GC的结果。
-我们还是执行GODEBUG调试
+分析一下本次GC的结果。
 $ GODEBUG='gctrace=1' ./snippet_mem
 
 2020/03/02 11:22:37 Start.
@@ -79,9 +55,41 @@ gc 28 @842.556s 0%: 0.027+0.18+0.003 ms clock, 0.054+0/0.11/0.14+0.006 ms cpu, 0
 ...
 
 分析
-先看在`test()`函数执行完后立即打印的`gc 21`那行的信息。`444->444->0 MB, 888 MB goal`表示垃圾回收器已经把444M的内存标记为非活跃的内存。
+先看在`test()`函数执行完后
+立即打印的`gc 21`那行的信息。`444->444->0 MB, 888 MB goal`表示垃圾回收器已经把444M的内存标记为非活跃的内存。
 再看下一个记录gc 22。0->0->0 MB, 4 MB goal表示垃圾回收器中的全局堆内存大小由888M下降为4M。
 
 结论
 1、在test()函数执行完后，demo程序中的切片容器所申请的堆空间都被垃圾回收器回收了。
 2、如果此时在top指令查询内存的时候，如果依然是800+MB，说明垃圾回收器回收了应用层的内存后，（可能）并不会立即将内存归还给系统。
+
+
+demo程序之后会每隔一段时间打印一些gc信息，汇总如下：
+GC forced
+gc 26 @120.562s 0%: 0.008+0.18+0.005 ms clock, 0.016+0/0.051/0.10+0.010 ms cpu, 0->0->0 MB, 8 MB goal, 2 P
+scvg0: inuse: 0, idle: 959, sys: 959, released: 447, consumed: 512 (MB)
+GC forced
+gc 27 @240.562s 0%: 0.005+0.19+0.005 ms clock, 0.010+0/0.063/0.13+0.010 ms cpu, 0->0->0 MB, 4 MB goal, 2 P
+GC forced
+scvg1: 512 MB released
+scvg1: inuse: 0, idle: 959, sys: 959, released: 959, consumed: 0 (MB)
+gc 28 @360.564s 0%: 0.007+0.099+0.004 ms clock, 0.014+0/0.036/0.13+0.008 ms cpu, 0->0->0 MB, 4 MB goal, 2 P
+GC forced
+gc 29 @480.565s 0%: 0.006+0.30+0.005 ms clock, 0.013+0/0.048/0.12+0.010 ms cpu, 0->0->0 MB, 4 MB goal, 2 P
+scvg2: 0 MB released
+scvg2: inuse: 0, idle: 959, sys: 959, released: 959, consumed: 0 (MB)
+GC forced
+gc 30 @600.566s 0%: 0.004+0.11+0.005 ms clock, 0.009+0/0.045/0.15+0.010 ms cpu, 0->0->0 MB, 4 MB goal, 2 P
+scvg3: inuse: 0, idle: 959, sys: 959, released: 959, consumed: 0 (MB)
+GC forced
+gc 31 @720.566s 0%: 0.004+0.081+0.004 ms clock, 0.009+0/0.024/0.10+0.008 ms cpu, 0->0->0 MB, 4 MB goal, 2 P
+GC forced
+gc 32 @840.567s 0%: 0.006+0.12+0.005 ms clock, 0.012+0/0.039/0.17+0.010 ms cpu, 0->0->0 MB, 4 MB goal, 2 P
+scvg4: inuse: 0, idle: 959, sys: 959, released: 959, consumed: 0 (MB)
+
+接下来看scvg相关的信息。该信息在demo程序每运行一段时间后打印一次。
+scvg0时consumed(从系统申请的大小)为512M。此时内存还没有归还给系统。
+scvg1时consumed为0，并且scvg1的released(归还给系统的大小)=(scvg0 released + scvg0 consumed)。此时内存已归还给系统。
+我们通过top命令查看，内存占用下降为38M。
+之后打印的scvg信息不再有变化。
+结论：垃圾回收器在一段时间后，（可能）会将回收的内存归还给系统。

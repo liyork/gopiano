@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+// 在golang中，未进行显式初始化的变量将会被初始化为该类型的“零”值（bool：false， int：0， string：""）
+
 // 指针储存的是一个值的地址，指针本身也需要地址来储存
 func Test_point(t *testing.T) {
 	var p *int   // 指针声明

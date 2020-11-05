@@ -3,6 +3,7 @@ package base
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -1653,4 +1654,652 @@ func TestPrioritySchedule(t *testing.T) {
 	}
 
 	println("done !")
+}
+
+// 用for range来遍历数组或者map的时候，被遍历的指针是不变的，每次遍历仅执行struct值的拷贝
+// 没有问题，就是简单的将stus中数据复制给data2，对于结构体会进行值拷贝
+func TestForrange(t *testing.T) {
+	var stus = []student{
+		{Name: "one", Age: 18},
+		{Name: "two", Age: 19},
+	}
+
+	data2 := make(map[int]student)
+	for i, v := range stus {
+		fmt.Println("v:", v)
+		data2[i] = v
+	}
+
+	for i, v := range data2 {
+		fmt.Printf("key=%d, value=%v \n", i, v)
+	}
+}
+
+// 有问题
+func TestForrange2(t *testing.T) {
+	var stus = []student{
+		{Name: "one", Age: 18},
+		{Name: "two", Age: 19},
+	}
+
+	data := make(map[int]*student)
+
+	for i, v := range stus {
+		// 多次for内&v是一个地址，可见for中将每个v都放在了一个位置
+		fmt.Printf("%p, %v:\n", &v, &v)
+		// 将一个地址赋值给多个i元素
+		data[i] = &v //应该改为：data[i] = &stus[i]
+	}
+
+	for i, v := range data {
+		fmt.Printf("key=%d, value=%v \n", i, v)
+	}
+}
+
+// Go中没有继承！没有继承！Go中是叫组合
+type student struct {
+	Name string
+	Age  int
+}
+
+func (p *student) love() {
+	fmt.Println("love")
+}
+
+func (p *student) like() {
+	fmt.Println("like first")
+	p.love()
+}
+
+type boy struct {
+	*student
+}
+
+func (b *boy) love() {
+	fmt.Println("hate")
+}
+
+// boy仅仅是组合*student，并没有继承关系，实际调用时，调用谁就是谁的方法
+func TestComposite(t *testing.T) {
+	b := &boy{}
+	b.like()
+
+	b.love()
+	var s *student = b.student
+	s.love()
+
+}
+
+// 不管运行顺序如何，当参数为函数的时候，要先计算参数的值
+func function(num int) int {
+	return num
+}
+func print1(num int) {
+	fmt.Println(num)
+}
+
+func TestPriorityComputeValue(t *testing.T) {
+	a := 1
+	defer print1(function(a))
+	a = 2
+}
+
+// 注意是struct的函数，还是* struct的函数
+type people interface {
+	speak()
+}
+
+type student2 struct {
+	name string
+	age  int
+}
+
+func (stu *student2) speak() {
+	fmt.Println("I am a student, I am ", stu.age)
+}
+
+func TestNotePointMethod(t *testing.T) {
+	var p people
+	// 声明的是指针接收
+	//p = student2{name: "RyuGou", age: 12}
+	p = &student2{name: "RyuGou", age: 12}
+	p.speak()
+}
+
+// make(chan int) 和 make(chan int, 1)是不一样的
+//chan一旦被写入数据后，当前goruntine就会被阻塞，直到有人接收才可以（即 “ <- ch”），如果没人接收，它就会一直阻塞着。
+// 而如果chan带一个缓冲，就会把数据放到缓冲区中，直到缓冲区满了，才会阻塞
+func TestChainDiff(t *testing.T) {
+	ch := make(chan int) //改为 ch := make(chan int, 1)能执行,1缓冲
+	ch <- 1
+	fmt.Println("success")
+}
+
+// golang 的 select 的功能和 select, poll, epoll 相似， 就是监听 IO 操作，当 IO 操作发生时，触发相应的动作。
+//select 的代码形式和 switch 非常相似， 不过 select 的 case 里的操作语句只能是”IO操作”
+// （不仅仅是取值<-channel，赋值channel<-也可以）， select 会一直等待等到某个 case 语句完成，也就是等到成功从channel中读到数据。之后select 语句结束
+func TestSelectBase1(t *testing.T) {
+	ch := make(chan int, 1)
+	//ch <- 1
+
+	select {
+	case msg := <-ch:
+		fmt.Println(msg)
+	default: // default可以判断chan是否已经满了
+		fmt.Println("default")
+	}
+
+	fmt.Println("success")
+}
+
+// Go语言中不存在未初始化的变量
+//变量定义基本方式为：
+//var 发量名字 类型 = 表达式
+//其中类型和表达式均可省略，如果初始化表达式被省略，将用零值初始化该变量。
+//数值变量对应的是0值
+//布尔变量对应的是false
+//字符串对应的零值是空字符串
+//接口或者引用类型（包括slice，map，chan）变量对应的是nil
+//数组或者结构体等聚合类型对应的零值是每个元素或字段对应该类型的零值。
+//var s string
+//fmt.Println(s) // ""
+
+// :=注意的问题
+//使用:=定义的变量，仅能使用在函数内部。
+//在定义多个变量的时候:=左边不一定是全部都是刚刚声明的，有些可能只是赋值,保证一个是新的即可
+func TestDeclarAssign(t *testing.T) {
+	in, err := os.Open("infile")
+	out, err := os.Create("outfile")
+	fmt.Println(in, out, err)
+}
+
+// new在Go语言中只是一个预定义的函数，它并不是一个关键字，我们可以将new作为变量或者其他
+func delta(old, new int) int {
+	return new - old
+}
+
+//并不是使用new就一定会在堆上分配内存
+//编译器会自动选择在栈上还是在堆上分配存储空间，但可能令人惊讶的是，这个选择并不是由用var还是new声明变量的方式决定的
+var global *int
+
+// f()函数中的x就是在堆上分配内存(被global使用)，而g()函数中的y就是分配在栈上(局部)。
+func f() {
+	var x int = 1
+	global = &x
+}
+
+func g() {
+	y := new(int)
+	*y = 1
+}
+
+// init函数在同一个文件中可以包含多个
+// 在同一个包文件中，可以包含有多个init函数，多个init函数的执行顺序和定义顺序一致。
+func init() {
+}
+func init() {
+}
+
+// Golang中没有“对象”
+type test3 struct {
+	name string
+}
+
+func (t *test3) getName() {
+	fmt.Println("t:", t == nil)
+	fmt.Println("getName...")
+}
+
+func (t *test3) setName(name string) {
+	fmt.Println("setName...")
+}
+
+//可以正常输出。Go本质上不是面向对象的语言，Go中是不存在object的含义的，不是真正的”对象”，是Go中struct的实体,调用getName方法，
+// 哪个接收者接收方法，若是指针接收，则可以在方法内修改指针数据，本质上是接收方法(依据类型进行调用)，以及方法处理两个事情
+func TestNoObject(t *testing.T) {
+	var t3 *test3
+	t3 = nil
+	t3.getName()
+
+	// 在Go中还可以转换，转换为：Type.method(t Type, arguments)
+	(*test3).getName(nil)
+	(*test3).setName(nil, "abc")
+}
+
+// Go中的指针*符号的含义
+//&取变量的地址
+func TestPointFlag(t *testing.T) {
+	a := 1
+	b := &a
+
+	//想取得a指针指向的值，该如何操作呢？用*号
+	// *的意思是对指针取值。取指针里面值指向的地址的值
+	*b++
+
+	// *和&可以相互抵消，同时注意，*&可以抵消，但是&*不可以；所以a和*&a是一样的，和*&*&*&a也是一样的。
+}
+
+// os.Args获取命令行指令参数，应该从数组的1坐标开始
+//os.Args的第一个元素，os.Args[0], 是命令本身的名字
+func TestArg(t *testing.T) {
+	fmt.Println(os.Args[0])
+	fmt.Println(os.Args[1])
+}
+
+// 数组切片slice的容量问题带来的bug
+// Golang切片的扩容；当切片添加元素时，切片容量不够了，就会扩容，扩容的大小遵循下面的原则：
+// （如果切片的容量小于1024个元素，那么扩容的时候slice的cap就翻番，乘以2；一旦元素个数超过1024个元素，增长因子就变成1.25，即每次增加原来容量的四分之一。）
+// 如果扩容之后，还没有触及原数组的容量，那么，切片中的指针指向的位置，就还是原数组（这就是产生bug的原因）；
+// 如果扩容之后，超过了原数组的容量，那么，Go就会开辟一块新的内存，把原来的值拷贝过来，这种情况丝毫不会影响到原数组。
+// 建议尽量避免bug的产生。
+func TestSliceProblem(t *testing.T) {
+	array := [4]int{10, 20, 30, 40}
+	slice := array[0:2]
+	//1，slice扩容后未达到array的capacity，所以公用一个array不进行扩容重新分配
+	//newSlice := append(slice, 50)
+	//newSlice[1] += 1
+
+	//2，slice的append过程中扩容后超过array的capacity，所以不公用一个array进行扩容重新分配
+	newSlice := append(append(append(slice, 50), 100), 150)
+	// 这个新的就和slice不一样内存了
+	newSlice[1] += 1
+
+	fmt.Println(slice)
+	fmt.Println(array)
+	fmt.Println(newSlice)
+}
+
+// map引用不存在的key，不报错
+// Golang中map的key不存在时会返回初始值
+func TestMapNil(t *testing.T) {
+	newMap := make(map[string]int)
+	fmt.Println(newMap["a"])
+}
+
+// map使用range遍历顺序问题，并不是录入的顺序，而是随机顺序
+func TestMapSeq(t *testing.T) {
+	newMap := make(map[int]int)
+	for i := 0; i < 10; i++ {
+		newMap[i] = i
+	}
+	for key, value := range newMap {
+		fmt.Printf("key is %d, value is %d\n", key, value)
+	}
+}
+
+// channel作为函数参数传递，可以声明为只取(<- chan)或者只发送(chan <-)
+//一个函数在将channel作为一个类型的参数来声明的时候，可以将channl声明为只可以取值(<- chan)或者只可以发送值(chan <-)，默认则既可以取值，也可以发送值。
+//只可以发送值
+func setData1(ch chan<- string) {
+}
+
+//只可以取值:
+func setData2(ch <-chan string) {
+}
+
+// 使用channel时，注意goroutine之间的执行流程问题
+func TestNoteRoutineSeq(t *testing.T) {
+	ch := make(chan string)
+	go setData(ch)
+	fmt.Println(<-ch)
+	fmt.Println(<-ch)
+	fmt.Println(<-ch)
+	fmt.Println(<-ch)
+	fmt.Println(<-ch)
+}
+
+func setData(ch chan string) {
+	ch <- "test"
+	ch <- "hello wolrd"
+	ch <- "123"
+	ch <- "456"
+	ch <- "789"
+}
+
+// todo 单个chan中的数据顺序是有序的吗？？
+
+// 一个基于无缓存channel的发送或者取值操作，会导致当前goroutine阻塞，一直等待到另外的一个goroutine做相反的取值或者发送操作以后，才会正常跑
+//记住：Golang的channel是用来goroutine之间通信的，且通信过程中会阻塞。
+
+// Golang中函数被看做是第一类值：(first-class values)：函数和其他值一样，可以被赋值，可以传递给函数，可以从函数返回。也可以被当做是一种“函数类型”。
+// 例如：有函数func square(n int) int { return n * n }，那么就可以赋值f := square,而且还可以fmt.Println(f(3))（将打印出“9”）
+//Go语言函数有两点很特别：
+//函数值类型不能作为map的key
+//函数值之间不可以比较，函数值只可以和nil作比较，函数类型的零值是nil
+func TestFuncIsValue(t *testing.T) {
+	array := make(map[int]func() int)
+	// key能计算出结果，是值
+	array[func() int { return 10 }()] = func() int {
+		return 12
+	}
+	fmt.Println(array)
+
+	// 不能编译通过。函数不能作为may的key
+	//array[func() int { return 12 }] = 10
+}
+
+// 匿名函数作用域陷阱
+func TestAnonymousFunc(t *testing.T) {
+	var msgs []func()
+	array := []string{
+		"1", "2", "3", "4",
+	}
+
+	//1. 匿名函数中记录的是循环变量e的内存地址，而不是循环变量某一时刻的值。而range会重用临时变量e的地址
+	//for _, e := range array {
+	//	msgs = append(msgs, func() {
+	//		fmt.Println(e)
+	//	})
+	//}
+
+	// 想要输出1、2、3、4需要改为：
+	for _, e := range array {
+		elem := e // 改成临时变量，值
+		// 每次循环后每个匿名函数中保存的就都是当时局部变量elem的值，这样的局部变量定义了4个，每次循环生成一个
+		msgs = append(msgs, func() {
+			fmt.Println(elem)
+		})
+	}
+
+	for _, v := range msgs {
+		v()
+	}
+}
+
+// [3]int 和 [4]int 不算同一个类型
+// 数组长度是数组类型的一个组成部分，因此[3]int和[4]int是两种不同的数组类型。
+func TestArrayType(t *testing.T) {
+	arrayA := [...]int{1, 2, 3}
+	arrayB := [...]int{1, 2, 3, 4}
+	fmt.Println(reflect.TypeOf(arrayA) == reflect.TypeOf(arrayB))
+}
+
+// 数组还可以指定一个索引和对应值的方式来初始化。
+func TestArrayInit(t *testing.T) {
+	arrayA := [...]int{0: 1, 2: 1, 3: 4}
+	fmt.Println(arrayA)
+
+	//arrayA的长度是多少呢？
+	fmt.Println(len(arrayA))
+	// 定义了一个数组长度为4的数组，指定索引的数组长度和最后一个索引的数值相关，例如:r := [...]int{99:-1}就定义了一个含有100个元素的数组r，最后一个元素输出化为-1，其他的元素都是用0初始化。
+}
+
+// 不能对map中的某个元素进行取地址&操作
+// map中的元素不是一个变量，不能对map的元素进行取地址操作，
+// 禁止对map进行取地址操作的原因可能是map随着元素的增加map可能会重新分配内存空间，这样会导致原来的地址无效
+func TestTakeAddrForMapEle(t *testing.T) {
+	ages := map[string]string{}
+	//a := &ages["bob"] // compile error: cannot take address of map element
+	fmt.Println(ages)
+}
+
+// 当map为nil的时候，不能添加值
+func TestPut2NilMap(t *testing.T) {
+	var sampleMap map[string]int
+	//必须使用make或者将map初始化之后，才可以添加元素。
+	//sampleMap = map[string]int {
+	//	"test1":1,
+	//}
+	sampleMap["test"] = 1
+	fmt.Println(sampleMap)
+}
+
+// &dilbert.Position和(&dilbert).Position是不同的
+//&dilbert.Position相当于&(dilbert.Position)而非(&dilbert).Position
+func TestTakeAddPriority(t *testing.T) {
+	type Employee struct {
+		ID        int
+		Name      string
+		Address   string
+		DoB       time.Time
+		Position  string
+		Salary    int
+		ManagerID int
+	}
+	var dilbert Employee
+
+	dilbert.Position = "123"
+
+	// 1. 输出的是内存地址
+	position := &dilbert.Position
+	fmt.Println(position)
+
+	//修改一下，把&dilbert.Position改为(&dilbert).Position
+	position1 := (&dilbert).Position
+	fmt.Println(position1)
+}
+
+// Go语言中函数返回的是值的时候，不能赋值
+type Employee struct {
+	ID        int
+	Name      string
+	Address   string
+	DoB       time.Time
+	Position  string
+	Salary    int
+	ManagerID int
+}
+
+// 函数EmployeeById(id int)返回的是值类型的，它的取值EmployeeByID(1).Salary也是一个值类型；
+// 值类型就是和赋值语句var a = 1或var a = hello world等号=右边的1、Hello world是一个概念，他是不能够被赋值的，只有变量能够被赋值。
+func EmployeeByID(id int) Employee {
+	return Employee{ID: id}
+}
+
+func TestReturnValuCannotAssign(t *testing.T) {
+	//EmployeeByID(1).Salary = 0//cannot assign to EmployeeByID(1).Salary
+}
+
+// 在声明方法时，如果一个类型名称本身就是一个指针的话，不允许出现在方法的接收器中
+type littleGirl struct {
+	Name string
+	Age  int
+}
+
+type girl *littleGirl
+
+// 不能编译通过，会提示“invalid receiver type girl(girl is a pointer type)”
+//func(this girl) changeName(name string){
+//	this.Name = name
+//}
+// Go语言中规定，只有类型（Type）和指向他们的指针（*Type）才是可能会出现在接收器声明里的两种接收器，
+// 为了避免歧义，明确规定，如果一个类型名本身就是一个指针的话，是不允许出现在接收器中的。
+
+// Go语言中，允许方法用nil指针作为其接收器，也允许函数将nil指针作为参数
+func (this littleGirl) changeName(name string) {
+	fmt.Println(name)
+}
+
+func TestNilReceiver(t *testing.T) {
+	little := littleGirl{Name: "Rose", Age: 1}
+	//不能编译通过，显示"cannot use nil as type littleGirl in assignment"
+	//little = nil
+	//上述代码中的littleGirl不是指针类型，改为*littleGirl，然后变量little赋值为&littleGirl{Name:"Rose", Age:1}就可以编译通过了。
+	little.changeName("yoyo")
+	fmt.Println(little)
+
+	//var littleGirl2 littleGirl
+	// cannot convert nil to type littleGirl
+	// 结构体声明即有默认值
+	//fmt.Println(littleGirl2 == nil, )
+}
+
+// Golang的时间格式化
+// 使用2006-01-02 15:04:05这个时间的格式
+func TestTime(t *testing.T) {
+	time := time.Now()
+	time.Format("20060102")            //相当于Ymd
+	time.Format("2006-01-02")          //相当于Y-m-d
+	time.Format("2006-01-02 15:04:05") //相当于Y-m-d H:i:s
+	time.Format("2006-01-02 00:00:00") //相当于Y-m-d 00:00:00
+}
+
+// 不要对“go函数”的执行时机做任何的假设，除非你确实能做出让这种假设成为绝对事实的保证。
+func TestGoMethodExeTime(t *testing.T) {
+	names := []string{"lily", "yoyo", "cersei", "rose", "annei"}
+	for _, name := range names {
+		go func() {
+			fmt.Println(name) // 引用的是外部对象，主协成控制的name
+		}()
+		//time.Sleep(time.Second)
+	}
+	runtime.GOMAXPROCS(1)
+	runtime.Gosched()
+}
+
+// 注意，值不可以寻址，变量可以寻址
+type Lili struct {
+	Name string
+}
+
+func (Lili *Lili) fmtPointer() {
+	fmt.Println("poniter")
+}
+
+func (Lili *Lili) fmtReference() {
+	fmt.Println("reference")
+}
+
+func TestPointMethod(t *testing.T) {
+	li := Lili{}
+	li.fmtPointer()
+
+	// 运行时错误，指针方法要求接收对象可寻址，而Lili{}不可寻址,将fmtPointer方法改成(Lili *Lili)就可以了
+	//Lili{}.fmtPointer()
+}
+
+// 注意类型提升后的接口中的类型问题
+// 一个包含nil指针的接口不是nil接口
+// 概念上讲一个接口的值分为两部分：一部分是类型，一部分是类型对应的值，他们分别叫：动态类型和动态值。类型系统是针对编译型语言的，类型是编译期的概念，因此类型不是一个值。
+func TestNilInterface(t *testing.T) {
+	var debug1 = false
+
+	// 错误
+	var buf *bytes.Buffer
+	// 正确
+	//var buf  io.Writer
+	if debug1 {
+		buf = new(bytes.Buffer)
+	}
+	f1(buf)
+
+	// 对于直接的``bytes.Buffer``类型的判空不会出现此问题。
+	// if buf == nil{
+	//		fmt.Println("right")
+	//	}
+	// 只有 接口类型参数，而实际参数是有类型的空指针,才会出现以上的坑，子类型升级成为接口，而接口的类型是有的
+}
+
+// 给f函数的out参数赋了一个*bytes.Buffer的空指针，所以out的动态值是nil。然而它的动态类型是bytes.Buffer，意思是：“A non-nil interface containing a nil pointer”，所以“out!=nil”的结果依然是true。
+func f1(out io.Writer) {
+
+	if out != nil {
+		fmt.Println("surprise!")
+	}
+}
+
+// 将map转化为json字符串的时候，json字符串中的顺序和map赋值顺序无关
+// Golang自带的json转换包转换，会将map中key的顺序改为字母顺序，而不是map的赋值顺序。map这个结构哪怕利用for range遍历的时候,其中的key也是无序的，可以理解为map就是个无序的结构
+func TestMap2JsonSeq(t *testing.T) {
+	params := make(map[string]string)
+
+	params["id"] = "1"
+	params["id1"] = "3"
+	params["controller"] = "sections"
+
+	data, _ := json.Marshal(params)
+	fmt.Println(string(data))
+}
+
+// Json反序列化数字到interface{}类型的值中，默认解析为float64类型
+// 使用 Golang 解析 JSON  格式数据时，若以 interface{} 接收数据，则会按照下列规则进行解析：
+// bool, for JSON booleans
+// float64, for JSON numbers
+// string, for JSON strings
+// []interface{}, for JSON arrays
+// map[string]interface{}, for JSON objects
+// nil for JSON null
+func TestJson2Float64(t *testing.T) {
+	jsonStr := `{"id":1058,"name":"RyuGou"}`
+	var jsonData map[string]interface{}
+	json.Unmarshal([]byte(jsonStr), &jsonData)
+
+	// interface conversion: interface {} is float64, not int
+	//sum :=  jsonData["id"].(int) + 3
+	// 正确
+	sum := int(jsonData["id"].(float64)) + 3
+	fmt.Println(sum)
+}
+
+// 小心声明赋值语法对全局变量的覆盖
+// 对于全局，即使在有多个变量、且有的变量存在有的变量不存在、且这些变量共同赋值的情况下，也不可以使用:=来给全局变量赋值
+// 对于局部，:=往往是用来声明局部变量的，在多个变量赋值且有的值存在的情况下，:=也可以用来赋值使用
+var varTest string
+
+func TestDeclarAssign2(t *testing.T) {
+	msgStr := "hello wolrd"
+	// 赋值msgStr,声明并赋值err
+	msgStr, err := "hello", errors.New("xxx") //err并不存在
+	fmt.Println(msgStr, err)
+
+	test4()
+}
+
+// 假如全局变量也使用类似的方式赋值，就会出现问题
+func test4() {
+	// varTest declared and not used
+	// 使用:=，相当于在函数中又定义了一个和全局变量varTest名字相同的局部变量，而这个局部变量又没有使用，所以会编译不通过。
+	//varTest, err := function2()
+	//fmt.Println(err.Error())
+
+	// 通过，用的=赋值，而不是声明赋值
+	err := errors.New("error")
+	varTest, err = function2()
+	fmt.Println(err.Error())
+}
+
+func function2() (string, error) {
+	return "hello world", errors.New("error")
+}
+
+// *interface 是一个指向interface的指针类型，而不是interface类型
+type Father interface {
+	Hello()
+}
+
+type Child struct {
+	Name string
+}
+
+func (s Child) Hello() {
+
+}
+
+func TestNilPointerInterface2(t *testing.T) {
+	//var buf Child
+	//buf = Child{}
+	// cannot use &buf (type *Child) as type *Father in argument to f3
+	// *Father is pointer to interface, not interface，是一个指向接口的指针，而不是接口
+	//f3(&buf)
+	// 正确
+	var buf Father
+	buf = Child{}
+	f3(&buf)
+}
+
+func TestNilPointerInterface1(t *testing.T) {
+	// 接口类型的变量可以被赋值为实现接口的结构体的实例，但是并不能代表接口的指针可以被赋值为实现接口的结构体的指针实例。
+	var buf3 Father = Child{}
+	// 但是,不对的
+	//var buf *Father = new(Child)
+	// 正确
+	var buf2 Father = Child{}
+	var pointer *Father = &buf2
+	fmt.Println(buf3, pointer)
+}
+
+func f3(out *Father) {
+	if out != nil {
+		fmt.Println("surprise!")
+	}
 }

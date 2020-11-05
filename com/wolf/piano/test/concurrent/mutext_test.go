@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+// 注意事项：
+//不要重复锁定互斥锁
+//锁定和解锁一定要成对出现
+//sync.Mutex是个结构体，尽量不要其当做参数，在多个函数直接传播。因为没啥意义，Golang的参数都是副本，多个副本之间都是相互独立的
+
 var NodeMu = map[string]sync.RWMutex{}
 
 // mutex是非重入锁

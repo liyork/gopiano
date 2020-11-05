@@ -33,6 +33,11 @@ import (
 // 接口可以采用不同的形式。 这就是多态性的定义。 接口在需要传递给它们的许多类型的参数的函数和方法的情况下非常有用，例如接受所有类型的值的Println函数。 如果你看到Println函数的语法，就像
 //当多个类型实现相同的接口时，使用相同的代码可以很容易地使用它们。 因此，只要我们可以使用接口，我们就应该尽量使用它。
 
+// 在golang中，一个类只需要实现了某个接口中的所有函数，我们就说这个类实现了该接口
+//一个类不需要继承于接口，也不需要知道有哪些接口的存在
+//接口和类之间不再有所谓的契约关系，因此实现类的时候，只需要关心自己应该提供哪些方法，不用再纠结接口需要拆得多细才合理。接口由使用方按需定义，而不用事前规划，也不需要绘制类库的继承树图
+//不用为了实现一个接口而导入一个包，因为多引用一个外部的包，就意味着更多的耦合。接口由使用方按自身需求来定义，使用方无需关心是否有其他模块定义过类似的接口
+
 // 反射是建立在类型系统(type system)上的
 //Go是一门静态类型的语言。每个变量都有一个静态类型，类型在编译的时后被知晓并确定了下来
 //虽然在运行时中，接口变量存储的值也许会变，但接口变量的类型是永不会变的
@@ -190,9 +195,14 @@ func TestInherit(t *testing.T) {
 		Animal: &Animal{
 			Name: "test",
 		},
+		Name: "xx123",
 	}
 
+	//重写了GetName，将Animal继承来的方法覆盖了
 	machineCat.GetName()
+	var a IAnimal = machineCat
+	a.GetName()
+
 	// 可以直接访问/设定匿名继承来的属性
 	fmt.Println(machineCat.Name)
 	//相同属性，这里是赋值machineCat的属性Name
@@ -203,6 +213,14 @@ func TestInherit(t *testing.T) {
 	dog := &Dog{Animal{Name: "xxx"}}
 	// 对于显示名称的继承只能先获取组合对象再获取属性
 	fmt.Println(dog.animal.Name)
+
+	// 使用了
+	var b Cat = Cat{
+		Animal: Animal{
+			Name: "test111",
+		},
+	}
+	b.GetName()
 }
 
 func TestPolymorphic(t *testing.T) {
@@ -244,6 +262,12 @@ type MachineCat struct {
 	Name string
 }
 
+//继承，使用了匿名的非指针Animal
+type Cat struct {
+	Animal
+	Name string
+}
+
 func newMachineCat(name string) *MachineCat {
 	return &MachineCat{
 		Animal: NewAnimal(name),
@@ -255,11 +279,7 @@ func (value *MachineCat) GetName() {
 	fmt.Printf("MachineCat: %v\n", value.Name)
 }
 
-type Cat struct {
-	*Animal
-}
-
-//组合
+//组合，有字段名
 type Dog struct {
 	animal Animal
 }
@@ -469,7 +489,7 @@ func TestInterfaceAssert2(t *testing.T) {
 
 // 类型开关,类型切换
 func explain2(i interface{}) {
-	switch i.(type) { //  在switch中使用i.(type)语句，我们可以访问该动态类型。
+	switch i.(type) { //  在switch中使用i.(type)语句，可以查询接口指向对象的真实数据类型
 	case string:
 		fmt.Println("i stored string", strings.ToUpper(i.(string))) // 类型断言
 	case int:
@@ -535,4 +555,72 @@ func TestInterfacePointer(t *testing.T) {
 	perimeter := s.Perimeter()
 	fmt.Println("area of rectangle is", area)
 	fmt.Println("permeter of rectangle is", perimeter)
+}
+
+type IMyInterface1 interface {
+	Func1() bool
+	Func2() bool
+}
+
+type IMyInterface2 interface {
+	Func1() bool
+	Func2() bool
+}
+
+type IMyInterface3 interface {
+	Func1() bool
+}
+
+type MyClass struct {
+}
+
+func (p *MyClass) Func1() bool {
+	fmt.Println("MyClass.Func1()")
+	return true
+}
+
+func (p *MyClass) Func2() bool {
+	fmt.Println("MyClass.Func2()")
+	return true
+}
+
+func (p *MyClass) Func3() bool {
+	fmt.Println("MyClass.Func3()")
+	return true
+}
+
+// 接口之间赋值
+// 只要两个接口拥有相同的方法列表，那么它们就是等同的，可以相互赋值
+//等同的接口可以分布在不同的包中，包并不是判断接口是否等同的条件之一
+//接口赋值并不要求两个接口必须等价。如果接口A的方法列表是接口B的方法列表的子集，那么接口B是可以赋值给接口A，但是反过来不成立。
+func TestInterface2Interface(t *testing.T) {
+	var myInterface1 IMyInterface1 = new(MyClass)
+	var myInterface2 IMyInterface2 = myInterface1 // 等同接口
+	var myInterface3 IMyInterface3 = myInterface2 // 子集接口，向下降级只用部分可支持的功能
+
+	// 实际调用的都是内部指向的对象
+	myInterface1.Func1() // MyClass.Func1()
+	myInterface1.Func2() // MyClass.Func2()
+
+	myInterface2.Func1() // MyClass.Func1()
+	myInterface2.Func2() // MyClass.Func2()
+
+	myInterface3.Func1() // MyClass.Func1()
+}
+
+// 空接口：Any类型
+//golang中空接口interface{}可以指向任何对象实例
+func TestAnyInterface(t *testing.T) {
+	// 可以用来承载任意
+	var v1 interface{} = 1
+	var v2 interface{} = "abc"
+	var v3 interface{} = &v2
+	var v4 interface{} = struct{ X int }{1}
+	var v5 interface{} = &struct{ X int }{1}
+
+	fmt.Println(reflect.TypeOf(v1)) // int
+	fmt.Println(reflect.TypeOf(v2)) // string
+	fmt.Println(reflect.TypeOf(v3)) // *interface {}
+	fmt.Println(reflect.TypeOf(v4)) // struct { X int }
+	fmt.Println(reflect.TypeOf(v5)) // *struct { X int }
 }

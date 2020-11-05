@@ -5,9 +5,37 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"unsafe"
 )
 
-func TestOnceBase(t *testing.T) {
+type Singleton struct {
+}
+
+var singleintance *Singleton
+var once1 sync.Once
+
+func TestSingleton(t *testing.T) {
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			obj := GetSingletonObj()
+			fmt.Printf("%x\n", unsafe.Pointer(obj))
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
+func GetSingletonObj() *Singleton {
+	once1.Do(func() {
+		fmt.Println("Create Obj")
+		singleintance = new(Singleton)
+	})
+	return singleintance
+}
+
+func TestOnceConcurrent(t *testing.T) {
 	var once sync.Once
 	go func() {
 		fmt.Println("before 11111111")

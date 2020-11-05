@@ -68,3 +68,24 @@ func TestTypeAssert2(t *testing.T) {
 		fmt.Println("float32", t2)
 	}
 }
+
+// 通过给已有类型Type起一个别名Alias，然后为Alias增加一些新的方法使其成为一个新的类型，同时Alias将完全拥有Type的所有方法
+type MyRect Rect
+
+func (r *MyRect) GetArea() float64 {
+	return r.width * r.height
+}
+
+func TestNewType(t *testing.T) {
+	rect1 := &Rect{100, 200}
+	rect1.ModifyRect()
+	fmt.Println(rect1.width, rect1.height)  // 1000 1000
+	fmt.Println((*MyRect)(rect1).GetArea()) // 1e+06 进行强制类型转换可以调用
+
+	rect2 := &MyRect{100, 200}
+	// 强制类型转换,// 如果不确定符号的优先级，可以用括号来约束。
+	rect3 := (*Rect)(rect2)
+	rect3.ModifyRect()
+	fmt.Println(rect2.width, rect2.height) // 1000 1000
+	fmt.Println(rect2.GetArea())           // 1e+06
+}

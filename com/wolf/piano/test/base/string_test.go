@@ -175,3 +175,13 @@ func TestStringByte(t *testing.T) {
 	fmt.Println(s[:])         // "hello, world"
 	fmt.Println("hi" + s[5:]) //hi world
 }
+
+func TestStringConcat(t *testing.T) {
+	s1 := "a"
+	s2 := "b"
+	var build strings.Builder
+	build.WriteString(s1)
+	build.WriteString(s2)
+	s3 := build.String()
+	fmt.Println("s3:", s3)
+}
