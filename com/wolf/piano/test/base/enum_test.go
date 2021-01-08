@@ -17,6 +17,9 @@ const (
 	Stopped
 	Rebooting
 	Terminated
+	// 设定iota也是从开始算，和不加是一样的
+	XX = iota
+	YY
 )
 
 func (s State) String() string {
@@ -50,4 +53,6 @@ func TestEnumBase(t *testing.T) {
 
 	// 输出： "t {Name:example Port:6666 State:Unknown}"
 	fmt.Printf("t %+v\n", t1)
+
+	fmt.Println(XX, YY)
 }

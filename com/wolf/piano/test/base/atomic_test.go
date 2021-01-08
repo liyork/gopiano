@@ -76,3 +76,47 @@ func TestAtomicValue(t *testing.T) {
 	fmt.Println("x", x)
 
 }
+
+type Host struct {
+	flag uint64
+}
+
+func TestUsing(t *testing.T) {
+	var a atomic.Value
+	host := &Host{flag: 1}
+	a.Store(host)
+	go func() {
+		for {
+			x := a.Load()
+			for {
+				if x.(*Host).flag == 2 {
+					fmt.Printf("11111host:%v\n", x)
+					return
+				}
+			}
+		}
+	}()
+
+	test2233322(host)
+
+	time.Sleep(1111 * time.Second)
+}
+
+func test2233322(host *Host) {
+	go func() {
+		for {
+			time.Sleep(3 * time.Second)
+			host.flag = 2
+			//fmt.Printf("22222host:%v\n", host)
+		}
+	}()
+}
+
+func TestAtomicValuenNil(t *testing.T) {
+	var a atomic.Value
+	x := a.Load()
+	fmt.Println("x:", x == nil)
+
+	// panic: sync/atomic: store of nil value into Value
+	a.Store(nil)
+}

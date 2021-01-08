@@ -3,6 +3,7 @@ package base
 import (
 	"errors"
 	"fmt"
+	"os"
 	"runtime/debug"
 	"testing"
 	"time"
@@ -151,5 +152,46 @@ func RecoverScopeErr() {
 		fmt.Println("sleeping...")
 		time.Sleep(time.Second * 4)
 	}
+}
 
+// 程序退出，不能被recover
+func TestRecoverExit(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recoverd in f", r)
+		}
+	}()
+	fmt.Println("1111")
+	//panic(1111111)
+	os.Exit(1)
+	fmt.Println("222222")
+}
+
+func TestRecoverCorrect(t *testing.T) {
+	defer NoPanic()
+
+	var a = 0
+	fmt.Println(1 / a)
+}
+
+func NoPanic() {
+	if err := recover(); err != nil {
+		fmt.Println("Recover success...")
+	}
+}
+
+// defer之后的函数必须直接操作recover，不能间接操作recover
+func TestRecoverError(t *testing.T) {
+	//defer func() {
+	//	NoPanic()
+	//}()
+
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("Recover success...")
+		}
+	}()
+
+	var a = 0
+	fmt.Println(1 / a)
 }

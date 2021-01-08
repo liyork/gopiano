@@ -19,7 +19,7 @@ func TestTimer(t *testing.T) { // Test还一定要大写而且在前面
 	fmt.Println("time arrive,receive:", a)
 }
 
-// 从一个管道中读取数据，在管道中没有数据时，不想让程序永远阻塞在管道中，而是设定一个超时时间
+// 超时设置
 func TestWaitChan(t *testing.T) {
 	readChan := make(chan int)
 	timer := time.NewTimer(2 * time.Second)
@@ -60,7 +60,7 @@ func TestReset(t *testing.T) {
 	fmt.Println("reset")
 }
 
-// 时间后出发，便捷方法，但是返回chan，故不能stop、reset等
+// 时间后出发，便捷方法，没有需求提前停止定时器，也没有需求复用该定时器，那么可以使用匿名的定时器
 func TestAfter(t *testing.T) {
 	fmt.Println(time.Now())
 	<-time.After(2 * time.Second)

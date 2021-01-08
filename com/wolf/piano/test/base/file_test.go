@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -55,4 +57,41 @@ func TestReadFileAll(t *testing.T) {
 	defer fi.Close()
 	fd, err := ioutil.ReadAll(fi)
 	fmt.Println(string(fd))
+}
+
+// 针对nil的file进行IsDir会卡住
+func TestFileNot(t *testing.T) {
+	fileInfo, err := os.Stat("xxxxx")
+	if fileInfo.IsDir() || os.IsNotExist(err) {
+		fmt.Println("111111111")
+		return
+	}
+}
+
+// 不能删除*这种的
+func TestFileRemove(t *testing.T) {
+	err := os.Remove("/Users/lichao30/tmp/xx1.txt")
+	if err != nil {
+		fmt.Println("xx", err)
+	}
+}
+
+func TestListFile(t *testing.T) {
+	//flag.Parse()
+	//root := flag.Arg(0)
+	//fmt.Println()
+	var listpath string = "/Users/lichao30/tmp/prevtest"
+	listPath(listpath)
+}
+
+func listPath(path string) {
+	filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+		ok := strings.HasSuffix(path, "-prev")
+		if !ok {
+			return nil
+		}
+
+		fmt.Println("path:", path)
+		return nil
+	})
 }

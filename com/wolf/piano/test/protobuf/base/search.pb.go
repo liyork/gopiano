@@ -4,10 +4,10 @@
 package base
 
 import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-	other "other"
+	"fmt"
+	"github.com/golang/protobuf/proto"
+	"math"
+	//other "gopiano/com/wolf/piano/test/protobuf/other"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

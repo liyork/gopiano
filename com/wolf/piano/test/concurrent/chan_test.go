@@ -1020,3 +1020,18 @@ func TestRoutineChanSeq(t *testing.T) {
 	sd <- 0
 	log.Println("stop", <-stopC)
 }
+
+func TestLaterReceive(t *testing.T) {
+	sd := make(chan int)
+	go func() {
+		time.Sleep(5 * time.Second)
+		fmt.Println("receive...")
+		<-sd
+	}()
+	go func() {
+		fmt.Println("send...")
+		sd <- 1
+	}()
+
+	time.Sleep(8 * time.Second)
+}

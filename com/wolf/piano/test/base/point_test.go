@@ -27,10 +27,33 @@ import (
 //①操作符& : 当作二元操作符时，是按位与操作；当作一元操作符时，是返回该变量的内存地址。
 //②操作符* : 当作二元操作符时，是相乘的操作；当作一元操作符（解引用操作符）时，是返回该指针指向的变量的值，其实就是解除变量的指针引用，返回该变量的值。
 
+//#指针
+//一个变量存储的是一个值，但是这个值在内存中有一个地址，而指针保存的就是这个地址，通过这个地址，可以获取到值
+func TestBasePointer(t *testing.T) {
+	//定义的一个a变量
+	var a int = 123
+	//通过&符号，为a生成一个指针，是*int类型的变量接收
+	p := &a
+	// 通过 * 符号可以将 p 指针指向的地址的值取出来
+	fmt.Println(*p)
+	// 指针类型，由于 a 变量是一个 int 类型，所以指针 p 的类型是一个 int 类型的指针，通过打印可以获取到类型：*int
+	fmt.Printf("%T\n", p)  // *int
+	fmt.Printf("%T\n", *p) // int
+	// 通过 new() 函数对特定类型创建一个指针类型
+	b := new(string)
+	*b = "修改 b 指针的原始值"
+	fmt.Printf("%T\n", b) // 输出 *string， 是一个 string 类型的指针
+
+	var cat int = 1                 //声明整型变量 cat。
+	var str string = "banana"       //声明字符串变量 str。
+	fmt.Printf("%p %p", &cat, &str) //打印 cat 和 str 变量的内存地址，指针的值是带有0x十六进制前缀的一组数据
+}
+
 func TestPoint(t *testing.T) {
 	/* 声明一般变量 */
 	var a int = 10
 	fmt.Printf("变量a的地址: %x\n", &a) // 取地址符是&，放到一个变量前使用就会返回相应变量的内存地址
+	fmt.Printf("变量a的地址: %p\n", &a) // 相比于%x多了Ox
 	fmt.Printf("变量a的值: %d\n", a)
 
 	// 一个指针变量指向了一个值的内存地址
@@ -43,11 +66,18 @@ func TestPoint(t *testing.T) {
 
 	//在指针类型前面加上 * 号（前缀）来获取指针所指向的内容
 	fmt.Printf("*ip 变量的值: %d\n", *ip)
+}
 
-	// 当一个指针被定义后没有分配到任何变量时，它的值为 nil。
-	// nil 指针也称为空指针。在概念上和其它语言的null、None、nil、NULL一样，都指代零值或空值。
+// The of a pointer is nil. That means any uninitialized pointer will have the value nil. Let's see a complete example -
+// 变量声明而没有赋值，默认为零值，不同类型零值不同，例如字符串零值为空字符串；
+// 指针声明而没有赋值，默认为nil(nil 指针也称为空指针)，即该指针没有任何指向。当指针没有指向的时候，不能对(*point)进行读写操作，否则会报空指针异常。
+func TestPointNil(t *testing.T) {
 	var ptr *int
-	fmt.Printf("ptr地址为%v, ptr 的值为 : %x\n", &ptr, ptr)
+	fmt.Printf("ptr地址为%v, ptr 的值为 : %#v\n", &ptr, ptr)
+	fmt.Println("ptr = ", ptr)
+	// panic, bad access: nil dereference，读写都报错
+	//fmt.Println(*ptr, )
+	//*ptr = 1
 
 	// 空指针判断：
 	if ptr == nil {
@@ -55,6 +85,26 @@ func TestPoint(t *testing.T) {
 	} else {
 		fmt.Println("ptr不是空指针")
 	}
+}
+
+// 使用==运算符来比较两个相同类型的指针是否相等。
+func TestPointerCompare(t *testing.T) {
+	var a = 3014
+	var p1 = &a
+	var p2 = &a
+
+	if p1 == p2 {
+		fmt.Printf("compare p1(%x) = p2(%x) value(%d): \n", p1, p2, *p1)
+	}
+
+	//var b = 3014
+	//var p3 = &b
+	//sprintf := fmt.Sprintf("%x", &a)
+	//i, _ := strconv.ParseInt(sprintf, 10, 64)
+	//*p3 = int(i)
+	//if p1 == p3 {
+	//	fmt.Printf("compare p1(%x) = p3(%x) value(%d): \n", p1, p3, *p1)
+	//}
 }
 
 // 为什么nil访问方法可以，访问成员变量就会crash呢？
@@ -212,20 +262,38 @@ func demo3(person *Person2) {
 	person.name = "GoLang" //隐式的解引用
 }
 
+// 交换的是 a 和 b 的地址，在交换完毕后，a 和 b 的变量值确实被交换。但和 a、b 关联的两个变量并没有实际关联。
 func TestSwap(t *testing.T) {
 	a := 1
 	b := 2
-	swap(&a, &b)
-	fmt.Println(a, b)
+	// 取出 x 和 y 的地址作为参数传给 swap() 函数进行调用
+	fmt.Println(&a, a, &b, b)
+	//swap(&a, &b)
+	swap2(&a, &b)
+	fmt.Println(&a, a, &b, b)
 }
 
-func swap(a *int, b *int) {
-	var tmp int
-	// *a在等号右边为取地址的值
-	tmp = *a
+func swap(a, b *int) { //类型都为 *int 指针类型
+	// *a在等号右边为取地址的值,取a指针的值, 赋给临时变量t,t 此时是 int 类型
+	t := *a
 	// *a在等号左边为用值赋值给指定地址
-	*a = *b
-	*b = tmp
+	// 取 b 的指针值，赋给指针 a 指向的变量。注意，此时*a的意思不是取 a 指针的值，而是“a 指向的变量”
+	*a = *b //
+	// 将 t 的值赋给指针 b 指向的变量。
+	*b = t
+}
+
+// 参数到这里被复制，x,y是另外两个指针变量，
+func swap2(x, y *int) {
+	fmt.Println("param1:==>", &x, x, &y, y)
+	// 交换了下x和y的值，由于x和y是a，b的拷贝，所以并不会影响a和b以及a、b指向的内容
+	x, y = y, x
+	fmt.Println("param2:==>", &x, x, &y, y)
+}
+
+// 涉及取值然后赋值指针所指向的地址的内容
+func swap3(a, b *int) {
+	*b, *a = *a, *b
 }
 
 type Teacher1 struct {
@@ -273,4 +341,103 @@ func TestPointer(t *testing.T) {
 
 	//fmt.Printf("%+v\n", p)
 	//fmt.Printf("%p\n", &p)
+}
+
+type simpleHost struct {
+	name string
+}
+
+func TestPoint22222(t *testing.T) {
+	// s是个变量，有自己的地址
+	s := simpleHost{}
+	// s的地址，打印指针的值
+	fmt.Printf("%p\n", &s)
+
+	host := &s //host也是变量，也有地址，只不过里面的值是s的地址
+	// host的地址，host里面存放的是s的地址
+	fmt.Printf("%p, %p\n", &host, host)
+	test2222(host)
+}
+
+func test2222(host *simpleHost) {
+	// host的地址--这里由于传参导致值被复制，host里面存放的是s的地址
+	fmt.Printf("%p, %p\n", &host, host)
+}
+
+func TestPointer2(t *testing.T) {
+	var house = "Malibu Point 10880, 90265"
+	// 对字符串取地址, 将指针保存到变量 ptr 中,ptr类型为*string
+	ptr := &house
+	// 打印ptr的类型
+	fmt.Printf("ptr type: %T\n", ptr)
+	// ptr变量占用的地址
+	fmt.Printf("address &ptr: %v\n", &ptr)
+	// 打印ptr的指针地址
+	fmt.Printf("address p: %p\n", ptr)
+	fmt.Printf("address v: %v\n", ptr)
+	// 对 ptr 指针变量进行取值操作
+	value := *ptr
+	// 取值后的类型
+	fmt.Printf("value type: %T\n", value)
+	// 指针取值后就是指向变量的值
+	fmt.Printf("value: %s\n", value)
+}
+
+// 如果一个指针变量存放的又是另一个指针变量的地址，则称这个指针变量为指向指针的指针变量。
+//当定义一个指向指针的指针变量时，第一个指针存放第二个指针的地址，第二个指针存放变量的地址：
+//Pointer      Pointer     Variable
+//Address -->  Address --> Value
+//
+//指向指针的指针变量声明格式如下：指向指针的指针变量为整型
+//var ptr **int;
+func TestPointerPointer(t *testing.T) {
+	// 变量
+	var a int = 3000
+	// *int类型指针
+	var ptr *int
+	// **int类型指针
+	var pptr **int
+
+	// 指针ptr，持有a内存地址
+	ptr = &a
+
+	// 指针pptr，持有ptr内存地址
+	pptr = &ptr
+
+	fmt.Printf("变量 a = %d\n", a)
+	fmt.Printf("取出指针变量*ptr指向地址的值 = %d\n", *ptr)
+	fmt.Printf("指向指针的指针变量，取值 **pptr = %d\n", **pptr)
+}
+
+type PersonPointer struct {
+	name string
+	age  int
+}
+
+func (p PersonPointer) sayHi() {
+	fmt.Printf("SayHi -- This is %s, my age is %d\n", p.name, p.age)
+}
+func (p PersonPointer) ModifyAge(age int) {
+	p.age = age
+	// 一个拷贝
+	fmt.Printf("ModifyAge person:%p, <%s:%d>\n", &p, p.name, p.age)
+}
+
+func (p *PersonPointer) ChangeAge(age int) {
+	p.age = age
+	// 也是一个拷贝，不过p这个调用时的p都是指针，都指向的一个内存地址
+	fmt.Printf("ChangeAge person:%p, %p, <%s:%d>\n", &p, p, p.name, p.age)
+}
+
+// 方法即为有接受者的函数，接受者可以是类型的实例变量或者是类型的实例指针变量
+// 函数方法的接受者，也可以是指针变量。无论普通接收者还是指针接收者都会被拷贝传入方法中，不同在于拷贝的指针，其指向的地方都一样，只是其自身的地址不一样。
+func TestVariableAndPointerReceiver(t *testing.T) {
+	person := PersonPointer{"xxx", 21}
+	fmt.Printf("person:%p, %s, %d \n", &person, person.name, person.age)
+
+	person.sayHi()
+	person.ModifyAge(210)
+	// 编译器会改成(&person).ChangeAge
+	person.ChangeAge(210)
+	person.sayHi()
 }

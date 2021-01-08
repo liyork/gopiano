@@ -114,3 +114,41 @@ func TestNested(t *testing.T) {
 
 	time.Sleep(111 * time.Second)
 }
+
+func TestDeferResult1(t *testing.T) {
+	var xxx = 1
+	// 参数xxx在执行defer这里时就必须确定好
+	defer fmt.Println(xxx)
+	xxx = 2
+	return
+}
+
+// 函数的return语句并不是原子的，即不被中断。
+// 过程为:设置返回值,执行defer,return
+func TestDeferResult2(t *testing.T) {
+	//result := testDeferReturn1()
+	result := testDeferReturn2()
+	fmt.Println(result)
+}
+
+func testDeferReturn1() (result int) { // 具名返回值，被初始化局部变量
+	i := 1
+
+	defer func() {
+		result++
+	}()
+
+	return i
+}
+
+func testDeferReturn2() int {
+	var i int
+
+	defer func() {
+		i++
+		fmt.Printf("defer %p\n", &i)
+	}()
+	fmt.Printf("main %p\n", &i)
+	// 返回时，是匿名值返回，所以上面defer中即使拿到i但是返回值是匿名的已被确定
+	return i
+}

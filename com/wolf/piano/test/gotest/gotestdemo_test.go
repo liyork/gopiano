@@ -1,6 +1,9 @@
 package gotest
 
-import "testing"
+import (
+	"flag"
+	"testing"
+)
 
 // 单元测试（unit testing），是指对软件中的最小可测试单元进行检查和验证。
 //单元就是人为规定的最小的被测功能模块。
@@ -42,3 +45,36 @@ func TestB(t *testing.T) {
 func TestC(t *testing.T) {
 	t.Log("C")
 }
+
+// go test把-args后面的参数(以字符串形式传入)带到测试中去
+// go test -run TestArgs -v -args "cloud"
+func TestArgs(t *testing.T) {
+	if !flag.Parsed() {
+		flag.Parse()
+	}
+
+	argList := flag.Args() // flag.Args() 返回 -args 后面的所有参数，以切片表示，每个元素代表一个参数
+	for _, arg := range argList {
+		if arg == "cloud" {
+			t.Log("Running in cloud.")
+		} else {
+			t.Log("Running in other mode.")
+		}
+	}
+}
+
+// go test -run TestAdd -json
+// -o <file>,指定生成的二进制可执行程序，并执行测试，测试结束不会删除该程序
+// -bench regexp,是包含关系
+// -bench . 或
+
+// -benchtime <t>s,指定每个性能测试的执行时间，如果不指定，则使用默认时间1s。
+// -cpu 1,2,4  每个测试执行多次
+// -count n,指定每个测试执行的次数，默认执行一次。
+// -failfast,指定如果有测试出现失败，则立即停止测试
+// -list regexp,只是列出匹配成功的测试函数，并不真正执行
+// -parallel n,指定测试的最大并发数。
+// -run regexp,根据正则表达式执行单元测试和示例测试
+// -timeout d,默认情况下，测试执行超过10分钟就会超时而退出
+// -v,详细
+// -benchmem,默认情况下，性能测试结果只打印运行次数、每个操作耗时。使用-benchmem则可以打印每个操作分配的字节数、每个操作分配的对象数

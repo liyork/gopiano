@@ -6,7 +6,7 @@ package base;
 // request.proto代码迁移到newrequest.proto但是对于这里无感知
 // 编译器会在通过命令行参数-I或者--proto-path中指定的文件夹中搜索.proto文件，如果没有提供,编译器会在唤其编译器的目录中进行搜索。
 // 通常来说你应该将--proto-path的值设置为你项目的根目录，并对所有导入使用完全限定名称。
-import "other/request1.proto";
+import "gopiano/com/wolf/piano/test/protobuf/other/request1.proto";
 
 //option go_package = "github.com/liyork/gopiano/com/wolf/piano/test/protobuf/base";
 

@@ -255,26 +255,22 @@ func reflectSetValue2(x interface{}) {
 }
 
 func TestReflectStruct(t *testing.T) {
-	// 声明一个空结构体
 	type cat struct {
 		Name string
 		// 以 ` 开始和结尾的字符串。这个字符串在Go语言中被称为 Tag（标签）。一般用于给字段添加自定义信息，方便其他模块根据信息进行不同功能的处理。
 		Type int `json:"type" id:"100"`
 	}
-	// 创建cat的实例
 	ins := cat{Name: "mimi", Type: 1}
 	// 获取结构体实例的反射类型对象
 	typeOfCat := reflect.TypeOf(ins)
-	// 获得一个结构体类型共有多少个字段。如果类型不是结构体，将会触发宕机错误。
+	// 获得一个结构体类型共有多少个字段。如果类型不是结构体，将会触发panic。
 	for i := 0; i < typeOfCat.NumField(); i++ {
 		// 获取每个成员的结构体字段类型,返回 StructField 结构，这个结构描述结构体的成员信息，通过这个信息可以获取成员与结构体的关系，如偏移、索引、是否为匿名字段、结构体标签（StructTag）等
 		fieldType := typeOfCat.Field(i)
-		// 输出成员名和tag
 		fmt.Printf("name: %v  tag: '%v'\n", fieldType.Name, fieldType.Tag)
 	}
-	// 通过字段名, 找到字段类型信息
+
 	if catType, ok := typeOfCat.FieldByName("Type"); ok {
-		// 从tag中取出需要的tag,StructTag
 		fmt.Println(catType.Tag.Get("json"), catType.Tag.Get("id"))
 	}
 }

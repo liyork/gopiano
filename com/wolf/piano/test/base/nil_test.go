@@ -40,4 +40,10 @@ func TestNil(t *testing.T) {
 	}
 
 	fmt.Println("111")
+
+	var p chan int
+	var c interface{}
+	c = p
+	s, ok := c.(string)
+	fmt.Println(s, ok)
 }

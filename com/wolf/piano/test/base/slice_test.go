@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
@@ -231,4 +232,69 @@ func TestScale(t *testing.T) {
 
 	fmt.Println(testSlice1[0])
 	fmt.Println(testSlice2[0])
+}
+
+func TestSliceNil(t *testing.T) {
+	var files []*os.File
+	if files == nil {
+		fmt.Println("1111")
+	}
+}
+func TestSliceAppendNil(t *testing.T) {
+	var files []*os.File
+	// 添加nil没有错，但是进入了nil
+	files = append(files, nil)
+	files = append(files, &os.File{})
+
+	allFiles := getAllFiles()
+	// 针对nil进行...然后添加，也不报错，也不添加进入
+	files = append(files, allFiles...)
+	fmt.Println("file:", files)
+}
+
+func getAllFiles() []*os.File {
+	return nil
+}
+
+// slice根据数组array创建，与数组共享存储空间
+func TestResult(t *testing.T) {
+	var array [10]int
+
+	var slice = array[5:6]
+
+	fmt.Println("length of slice: ", len(slice))   // 6-1
+	fmt.Println("capacity of slice: ", cap(slice)) // 10-5
+	fmt.Println(&slice[0] == &array[5])
+}
+
+func TestSliceExpand(t *testing.T) {
+	var sli []int
+	fmt.Printf("len:%v, cap:%v\n", len(sli), cap(sli)) // 0
+	sli = append(sli, 1)
+	fmt.Printf("len:%v, cap:%v\n", len(sli), cap(sli)) // 1
+	sli = append(sli, 2)
+	fmt.Printf("len:%v, cap:%v\n", len(sli), cap(sli)) // 2
+	sli = append(sli, 3)
+	fmt.Printf("len:%v, cap:%v\n", len(sli), cap(sli)) // 4
+	sli = append(sli, 4)
+	fmt.Printf("len:%v, cap:%v\n", len(sli), cap(sli)) // 4
+	sli = append(sli, 5)
+	fmt.Printf("len:%v, cap:%v\n", len(sli), cap(sli)) // 8
+
+	testCap := make([]uint16, 10)
+	fmt.Printf("len:%v, cap:%v\n", len(testCap), cap(testCap)) // 10,10直接按照设定的来
+}
+
+func TestResult2(t *testing.T) {
+	orderLen := 5
+	order := make([]uint16, 2*orderLen)
+
+	pollorder := order[:orderLen:orderLen] // 0,4,5
+	fmt.Println("len(pollorder) = ", len(pollorder))
+	fmt.Println("cap(pollorder) = ", cap(pollorder))
+
+	// 5,9,5  5,9,5
+	lockorder := order[orderLen:][:orderLen:orderLen]
+	fmt.Println("len(lockorder) = ", len(lockorder))
+	fmt.Println("cap(lockorder) = ", cap(lockorder))
 }

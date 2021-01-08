@@ -20,6 +20,9 @@ func TestString2Int(t *testing.T) {
 	// string到int64
 	int64, _ := strconv.ParseInt(s, 10, 64)
 	fmt.Println("string2int64:", int64)
+
+	// 强制转换失败
+	//int(s)
 }
 
 func TestInt2String(t *testing.T) {
@@ -41,6 +44,10 @@ func TestInt2String(t *testing.T) {
 	b := make([]byte, 0)
 	b = strconv.AppendInt(b, -2048, 16)
 	fmt.Printf("%s", b) // -800
+
+	// 不能这样强制转换
+	i2 := string(i)
+	fmt.Println("typeConvert2String:", i2)
 }
 
 // int/float/bool/字符-->str，用fmt.sprintf进行转换，%q展示双引号括起来的字符串面值

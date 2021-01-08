@@ -7,6 +7,7 @@ import (
 	"syscall"
 )
 
+// mac 上ps一定要grep signalpart而不是signalpart.go
 // 监听指定信号
 // go run signalpart.go
 // ctrl+c  ,interrupt
