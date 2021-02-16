@@ -1,14 +1,18 @@
 package log
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"testing"
 )
 
 func TestLogBase(t *testing.T) {
+
+	err := os.MkdirAll("/export/server", 0755)
+	fmt.Println("err:", err)
 	// 按照所需读写权限创建文件
-	f, err := os.OpenFile("filename", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	f, err := os.OpenFile("/export/server/test.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -17,7 +21,7 @@ func TestLogBase(t *testing.T) {
 	//设置日志输出到 f
 	log.SetOutput(f)
 	//测试用例
-	log.Println("check to make sure it works")
+	log.Println("check to make sure it works!!!!")
 }
 
 // Ldate 日期: 2009/01/23
