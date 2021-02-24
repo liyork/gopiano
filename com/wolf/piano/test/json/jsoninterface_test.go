@@ -49,12 +49,14 @@ func (c Circle) Circumference() float64 {
 type ShapeMap map[string]Shape
 
 func (sm *ShapeMap) UnmarshalJSON(data []byte) error {
+	// 解析key
 	shapes := make(map[string]json.RawMessage)
 	err := json.Unmarshal(data, &shapes)
 	if err != nil {
 		return err
 	}
 	result := make(ShapeMap)
+	// 再解析value
 	for k, v := range shapes {
 		switch k {
 		case "square":

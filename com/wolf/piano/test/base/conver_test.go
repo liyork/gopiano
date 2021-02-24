@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	"unsafe"
 )
 
 func TestString2Int(t *testing.T) {
@@ -263,4 +264,33 @@ func TestBool2String(t *testing.T) {
 func TestTime2String(t *testing.T) {
 	format := time.Now().Format("2006-01-02 15:04")
 	fmt.Println("format:", format)
+}
+
+// Go不允许在不同类型的指针之间进行转换，因为它本质上是不安全的。
+// 但是，如果你仍然想要这样做，Pointer包中有一个unsafe类型，它代表一个指向任意类型的指针。
+// 任何类型的指针都可以转换为unsafe.Pointer，unsafe.Pointer可以转换为任何类型的指针，只要它们具有相同的内存结构即可。
+// 这允许您忽略类型系统并将任何类型的数据解释为任何其他类型的数据。这打破Go类型系统和内存管理的安全机制，需要使用者非常小心。
+func TestUnsafePointer(t *testing.T) {
+	var y int64
+	var x int32 = 2
+	y = *(*int64)(unsafe.Pointer(&x))
+	fmt.Println(y)
+}
+
+// 包unsafe提供了下面两条重要的指针相关的功能：
+//任何类型的指针都可以被转换为unsafe.Pointer类型，反之亦然，可以进行不同类型指针转换
+//一个uintptr值可以被转换为unsafe.Pointer类型，反之亦然，可以进行指针运算
+// 在这里补充对unsafe.Pointer和uintptr两种类型单独解释两句：
+//unsafe.Pointer是一个指针类型。uintptr 是一个整数类型，这个整数的宽度足以用来存储一个指针类型数据，可以运算。
+func TestPointerAndUintptr(t *testing.T) {
+	var ii [4]int = [4]int{11, 22, 33, 44}
+
+	var p0 *int = &ii[0]                       // p0 point to first element
+	var p1 unsafe.Pointer = unsafe.Pointer(p0) // convert (* int) to unsafe.Pointer
+	var p2 uintptr = uintptr(p1)               // convert unsafe.Pointer to uintptr
+	p2 += 8                                    // computing uintptr with plus 8, i.e, the next element address
+	var p3 unsafe.Pointer = unsafe.Pointer(p2) // convert uintptr back to unsafe.Pointer
+	var p4 *int64 = (*int64)(p3)               // convert unsafe.Pointer to another type pointer, (* int64)
+
+	fmt.Printf("*p0=%d,*p4=%d\n", *p0, *p4)
 }
