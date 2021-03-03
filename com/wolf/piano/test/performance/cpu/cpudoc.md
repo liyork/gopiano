@@ -60,3 +60,8 @@ brew install graphviz
 将graphviz安装目录下的bin文件夹添加到Path环境变量中。 在终端输入dot -version查看是否安装成功。
 得到一个svg的可视化文件在/tmp路径下
 这样我们就能比较清晰的看到函数之间的调用关系,方块越大的表示cpu的占用越大.
+
+
+目前最后使用火焰图方式：
+go get -u github.com/google/pprof 
+pprof -http 127.0.0.1:9090 http://targetip/debug/pprof/profile\?seconds\=120

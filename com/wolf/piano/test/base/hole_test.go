@@ -73,6 +73,43 @@ import (
 //	fmt.Printf("info: %+v\n", data)
 //}
 
+// 有些重复：
+// func main() {  --必须这样
+//
+//remove the unused variables
+//
+//The blank identifier is used to import packages for their side effects.  --副作用
+//
+//Short Variable Declarations Can Be Used Only Inside Functions
+//
+//短声明不能用于重复一个变量，除非有多个变量
+//
+//短声明不能用于设定结构体的值，一般直接用=赋值即可
+//
+//短声明造成不同域内的新变量，用go vet your_file.go检查  --我这里似乎不行。
+//
+//The "nil" identifier can be used as the "zero value" for interfaces, functions, pointers, maps, slices, and channels.
+//nil赋值必须要有类型
+//
+//这对nil的slice操作add可以，但是map不行
+//
+//map不支持cap方法
+//
+//string默认值是""，不能用nil
+//
+//Arrays in Go are values, so when you pass arrays to functions the functions get a copy of the original array data
+//数组就是值，传递时拷贝，要想改则用指针如：arr *[3]int，或者用slice，即使slice拷贝但是他们指向的都是一个array
+//
+//range in Go,It generates two values: the first value is the item index while the second value is the item data.
+//
+//用第二个值检查map中key是否存在，如：_,ok := x["two"]
+//
+//Strings are read-only byte slices，转成[]byte再改
+//
+//a given character could be stored in multiple bytes，一个字符可能存储于多个字节，若想改字符则用rune slice
+//
+//string和[]byte转换，go进行了优化
+
 type info struct {
 	result int
 }

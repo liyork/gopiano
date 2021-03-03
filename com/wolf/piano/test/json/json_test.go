@@ -318,3 +318,14 @@ func TestUnMarshalNilStruct(t *testing.T) {
 
 	fmt.Println(stu, err)
 }
+
+func TestUnMarshalPointPoint(t *testing.T) {
+	data := "{\"name\":\"张三\",\"Age\":18,\"high\":true,\"sex\":\"男\",\"CLASS\":{\"naME\":\"1班\",\"GradE\":3}}"
+	str := []byte(data)
+
+	stu := &StuRead3{}
+	// 两次指针还是序列化。。。
+	json.Unmarshal(str, &stu)
+
+	fmt.Printf("stu:,%+v", stu)
+}
